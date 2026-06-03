@@ -1,0 +1,65 @@
+@inject NavigationManager Navigation
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <i class="bi bi-compass me-2"></i> Discover
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/agents">
+                <i class="bi bi-robot me-2"></i> Agents
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/prompts">
+                <i class="bi bi-chat-text me-2"></i> Prompts
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/skills">
+                <i class="bi bi-lightning-charge me-2"></i> Skills
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/my-library">
+                <i class="bi bi-bookmark-star me-2"></i> My Library
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/playground">
+                <i class="bi bi-play-circle me-2"></i> Playground
+            </NavLink>
+        </div>
+
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <hr class="my-2" />
+                <div class="nav-item px-3">
+                    <span class="nav-link text-muted small text-uppercase">Admin</span>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin" Match="NavLinkMatch.All">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/categories">
+                        <i class="bi bi-tags me-2"></i> Categories
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/tags">
+                        <i class="bi bi-tag me-2"></i> Tags
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/users">
+                        <i class="bi bi-people me-2"></i> Users
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </nav>
+</div>

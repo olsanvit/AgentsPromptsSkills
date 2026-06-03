@@ -1,0 +1,145 @@
+@page "/"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+
+<PageTitle>Discover — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4">
+    <h1 class="h3"><i class="bi bi-compass me-2"></i>Discover</h1>
+    <p class="text-muted">Browse agents, prompts and skills shared by the community.</p>
+</div>
+
+<div class="ui-panel ui-anim-fade-up mb-4">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <input class="form-control" placeholder="Search by name..." @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_typeFilter">
+                <option value="">All types</option>
+                <option value="Agent">Agents</option>
+                <option value="Prompt">Prompts</option>
+                <option value="Skill">Skills</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_categoryFilter">
+                <option value="">All categories</option>
+                @foreach (var cat in _categories)
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var item in FilteredItems)
+        {
+            <div class="col">
+                <div class="card h-100 ui-panel">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@item.Name</h5>
+                            <span class="badge @TypeBadgeClass(item.Type)">@item.Type</span>
+                        </div>
+                        <p class="card-text text-muted small">
+                            @(item.Description?.Length > 120 ? item.Description[..120] + "…" : item.Description)
+                        </p>
+                        @if (item.Tags?.Any() == true)
+                        {
+                            <div class="mb-2">
+                                @foreach (var tag in item.Tags.Take(4))
+                                {
+                                    <span class="badge bg-secondary me-1">@tag</span>
+                                }
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <small class="text-muted">@item.OwnerName</small>
+                            <span class="text-muted small"><i class="bi bi-hand-thumbs-up me-1"></i>@item.Likes</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a href="/@item.Type.ToLower()s/@item.Id" class="btn btn-sm btn-outline-primary w-100">View</a>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (!FilteredItems.Any())
+        {
+            <div class="col-12 text-center text-muted py-5">No items found.</div>
+        }
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private string _search = "";
+    private string _typeFilter = "";
+    private string _categoryFilter = "";
+    private List<DiscoverItem> _items = [];
+    private List<string> _categories = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        var agents = await db.ApsAgents
+            .Where(a => a.IsPublic)
+            .Select(a => new DiscoverItem(a.Id, a.Name, "Agent", a.Description, a.Category, a.OwnerName, a.LikeCount, a.Tags))
+            .ToListAsync();
+
+        var prompts = await db.ApsPrompts
+            .Where(p => p.IsPublic)
+            .Select(p => new DiscoverItem(p.Id, p.Name, "Prompt", p.Description, p.Category, p.OwnerName, p.LikeCount, p.Tags))
+            .ToListAsync();
+
+        var skills = await db.ApsSkills
+            .Where(s => s.IsPublic)
+            .Select(s => new DiscoverItem(s.Id, s.Name, "Skill", s.Description, s.Category, s.OwnerName, s.LikeCount, s.Tags))
+            .ToListAsync();
+
+        _items = [.. agents, .. prompts, .. skills];
+        _categories = _items
+            .Where(i => !string.IsNullOrWhiteSpace(i.Category))
+            .Select(i => i.Category!)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+
+        _loading = false;
+    }
+
+    private IEnumerable<DiscoverItem> FilteredItems =>
+        _items
+            .Where(i => string.IsNullOrWhiteSpace(_search) || i.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
+            .Where(i => string.IsNullOrWhiteSpace(_typeFilter) || i.Type == _typeFilter)
+            .Where(i => string.IsNullOrWhiteSpace(_categoryFilter) || i.Category == _categoryFilter);
+
+    private static string TypeBadgeClass(string type) => type switch
+    {
+        "Agent"  => "bg-primary",
+        "Prompt" => "bg-success",
+        "Skill"  => "bg-warning text-dark",
+        _        => "bg-secondary"
+    };
+
+    private record DiscoverItem(
+        Guid Id,
+        string Name,
+        string Type,
+        string? Description,
+        string? Category,
+        string? OwnerName,
+        int Likes,
+        ICollection<string>? Tags);
+}

@@ -1,0 +1,205 @@
+@page "/playground"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject ApsPlaygroundService PlaygroundService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Playground — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4">
+    <h1 class="h3"><i class="bi bi-play-circle me-2"></i>Playground</h1>
+    <p class="text-muted mb-0">Test agents and prompts against Claude.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="ui-panel ui-anim-fade-up h-100">
+            <h5 class="mb-3">Configuration</h5>
+
+            <div class="mb-3">
+                <label class="form-label">Agent (optional)</label>
+                <select class="form-select" @bind="_selectedAgentId">
+                    <option value="">— Manual system prompt —</option>
+                    @foreach (var agent in _agents)
+                    {
+                        <option value="@agent.Id">@agent.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">System prompt</label>
+                <textarea class="form-control font-monospace" rows="6" @bind="_systemPrompt"
+                          placeholder="You are a helpful assistant..."
+                          disabled="@(_selectedAgentId != Guid.Empty)"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Model</label>
+                <select class="form-select" @bind="_modelName">
+                    <option value="claude-opus-4-5">claude-opus-4-5</option>
+                    <option value="claude-sonnet-4-5" selected>claude-sonnet-4-5</option>
+                    <option value="claude-haiku-3-5">claude-haiku-3-5</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">User message</label>
+                <textarea class="form-control" rows="5" @bind="_userMessage" placeholder="Type your message here..."></textarea>
+            </div>
+
+            <button class="btn btn-primary w-100" @onclick="RunAsync" disabled="@_running">
+                @if (_running)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span>Running…</span>
+                }
+                else
+                {
+                    <i class="bi bi-play-fill me-1"></i>
+                    <span>Run</span>
+                }
+            </button>
+
+            @if (_error is not null)
+            {
+                <div class="alert alert-danger mt-3">@_error</div>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="ui-panel ui-anim-fade-up h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Response</h5>
+                @if (_result is not null)
+                {
+                    <div class="d-flex gap-3">
+                        <small class="text-muted"><i class="bi bi-clock me-1"></i>@_result.DurationMs ms</small>
+                        <small class="text-muted"><i class="bi bi-hash me-1"></i>@_result.InputTokens in / @_result.OutputTokens out</small>
+                    </div>
+                }
+            </div>
+
+            @if (_result is not null)
+            {
+                <div class="p-3 bg-dark rounded font-monospace" style="white-space: pre-wrap; min-height: 300px; max-height: 600px; overflow-y: auto;">
+                    @_result.ResponseText
+                </div>
+            }
+            else
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-chat-square-dots display-4"></i>
+                    <p class="mt-2">Run a prompt to see the response here.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (_sessions.Any())
+{
+    <div class="ui-panel ui-anim-fade-up mt-4">
+        <h5 class="mb-3">Recent sessions</h5>
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Agent</th>
+                    <th>Model</th>
+                    <th>Tokens</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in _sessions)
+                {
+                    <tr>
+                        <td><small>@s.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                        <td><small>@(s.AgentName ?? "Manual")</small></td>
+                        <td><small>@s.ModelName</small></td>
+                        <td><small>@s.InputTokens / @s.OutputTokens</small></td>
+                        <td><small>@s.DurationMs ms</small></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private bool _running;
+    private string? _error;
+    private string _systemPrompt = "";
+    private string _userMessage = "";
+    private string _modelName = "claude-sonnet-4-5";
+    private Guid _selectedAgentId = Guid.Empty;
+    private string _userId = "";
+    private ApsPlaygroundResult? _result;
+    private List<ApsAgent> _agents = [];
+    private List<ApsPlaygroundSession> _sessions = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _agents = await db.ApsAgents
+            .Where(a => a.IsPublic || a.OwnerId == _userId)
+            .OrderBy(a => a.Name)
+            .ToListAsync();
+
+        _sessions = await db.ApsPlaygroundSessions
+            .Where(s => s.OwnerId == _userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .Take(10)
+            .ToListAsync();
+    }
+
+    private async Task RunAsync()
+    {
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_userMessage))
+        {
+            _error = "Please enter a user message.";
+            return;
+        }
+
+        _running = true;
+        StateHasChanged();
+
+        try
+        {
+            string systemPrompt = _systemPrompt;
+            Guid? agentId = _selectedAgentId == Guid.Empty ? null : _selectedAgentId;
+
+            if (agentId.HasValue)
+            {
+                var agent = _agents.FirstOrDefault(a => a.Id == agentId.Value);
+                if (agent is not null)
+                    systemPrompt = agent.SystemPrompt ?? "";
+            }
+
+            _result = await PlaygroundService.RunAsync(systemPrompt, _userMessage, _modelName, agentId, _userId);
+
+            // Refresh sessions
+            await using var db = await DbFactory.CreateDbContextAsync();
+            _sessions = await db.ApsPlaygroundSessions
+                .Where(s => s.OwnerId == _userId)
+                .OrderByDescending(s => s.CreatedAt)
+                .Take(10)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _running = false;
+        }
+    }
+}

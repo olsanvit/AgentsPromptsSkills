@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  app:
+    build: .
+    ports: ["8080:8080"]
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__ApsDatabase=Host=db;Port=5432;Database=AgentsPromptsSkills;Username=postgres;Password=postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: AgentsPromptsSkills
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - aps_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  aps_data:

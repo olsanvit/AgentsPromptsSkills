@@ -1,0 +1,129 @@
+@page "/create/skill"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Create Skill — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4">
+    <h1 class="h3"><i class="bi bi-lightning-charge me-2"></i>Create Skill</h1>
+</div>
+
+<div class="ui-panel ui-anim-fade-up" style="max-width: 720px;">
+    <EditForm Model="_model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="alert alert-danger" />
+
+        <div class="mb-3">
+            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="_model.Name" placeholder="Skill name" />
+            <ValidationMessage For="() => _model.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <InputTextArea class="form-control" @bind-Value="_model.Description" rows="2" placeholder="What does this skill do?" />
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Skill Type</label>
+                <InputSelect class="form-select" @bind-Value="_model.SkillType">
+                    <option value="CodeExecution">Code Execution</option>
+                    <option value="WebSearch">Web Search</option>
+                    <option value="FileIO">File I/O</option>
+                    <option value="ApiCall">API Call</option>
+                    <option value="Custom">Custom</option>
+                </InputSelect>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Category</label>
+                <InputText class="form-control" @bind-Value="_model.Category" placeholder="e.g. Automation, Data…" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Content / Implementation <span class="text-danger">*</span></label>
+            <InputTextArea class="form-control font-monospace" @bind-Value="_model.Content" rows="14"
+                           placeholder="// Paste skill code or definition here..." />
+            <ValidationMessage For="() => _model.Content" />
+        </div>
+
+        <div class="form-check form-switch mb-4">
+            <InputCheckbox class="form-check-input" @bind-Value="_model.IsPublic" id="isPublicSkill" />
+            <label class="form-check-label" for="isPublicSkill">Make public</label>
+        </div>
+
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger">@_error</div>
+        }
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@_saving">
+                @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Save Skill
+            </button>
+            <a href="/skills" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private SkillFormModel _model = new();
+    private bool _saving;
+    private string? _error;
+
+    private async Task SaveAsync()
+    {
+        _error = null;
+        _saving = true;
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            var userName = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var skill = new ApsSkill
+            {
+                Id          = Guid.NewGuid(),
+                Name        = _model.Name,
+                Description = _model.Description,
+                Content     = _model.Content,
+                SkillType   = _model.SkillType,
+                Category    = _model.Category,
+                IsPublic    = _model.IsPublic,
+                OwnerId     = userId,
+                OwnerName   = userName,
+                CreatedAt   = DateTime.UtcNow,
+                LikeCount   = 0
+            };
+            db.ApsSkills.Add(skill);
+            await db.SaveChangesAsync();
+            Navigation.NavigateTo("/skills");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class SkillFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Content { get; set; } = "";
+        public string SkillType { get; set; } = "Custom";
+        public string? Category { get; set; }
+        public bool IsPublic { get; set; }
+    }
+}

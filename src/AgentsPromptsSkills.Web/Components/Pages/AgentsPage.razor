@@ -1,0 +1,126 @@
+@page "/agents"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Agents — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h3"><i class="bi bi-robot me-2"></i>Agents</h1>
+        <p class="text-muted mb-0">Browse and manage AI agents.</p>
+    </div>
+    <a href="/create/agent" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Create New Agent
+    </a>
+</div>
+
+<div class="ui-panel ui-anim-fade-up mb-4">
+    <div class="row g-2">
+        <div class="col-md-5">
+            <input class="form-control" placeholder="Search agents..." @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_categoryFilter">
+                <option value="">All categories</option>
+                @foreach (var cat in _categories)
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else
+{
+    <div class="ui-panel ui-anim-fade-up">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Model</th>
+                    <th>Category</th>
+                    <th>Visibility</th>
+                    <th>Likes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var agent in FilteredAgents)
+                {
+                    <tr>
+                        <td>
+                            <strong>@agent.Name</strong>
+                            @if (!string.IsNullOrWhiteSpace(agent.Description))
+                            {
+                                <br /><small class="text-muted">@(agent.Description.Length > 80 ? agent.Description[..80] + "…" : agent.Description)</small>
+                            }
+                        </td>
+                        <td><span class="badge bg-info text-dark">@(agent.ModelName ?? "—")</span></td>
+                        <td>@(agent.Category ?? "—")</td>
+                        <td>
+                            @if (agent.IsPublic)
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Private</span>
+                            }
+                        </td>
+                        <td>@agent.LikeCount</td>
+                        <td>
+                            <a href="/agents/@agent.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+                @if (!FilteredAgents.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">No agents found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private string _search = "";
+    private string _categoryFilter = "";
+    private string _userId = "";
+    private List<ApsAgent> _agents = [];
+    private List<string> _categories = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _agents = await db.ApsAgents
+            .Where(a => a.IsPublic || a.OwnerId == _userId)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+
+        _categories = _agents
+            .Where(a => !string.IsNullOrWhiteSpace(a.Category))
+            .Select(a => a.Category!)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+
+        _loading = false;
+    }
+
+    private IEnumerable<ApsAgent> FilteredAgents =>
+        _agents
+            .Where(a => string.IsNullOrWhiteSpace(_search) || a.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
+            .Where(a => string.IsNullOrWhiteSpace(_categoryFilter) || a.Category == _categoryFilter);
+}

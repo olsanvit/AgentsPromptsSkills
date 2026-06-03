@@ -1,0 +1,59 @@
+@using AgentsPromptsSkills.Web.Components.Pages
+
+<div class="ui-panel ui-anim-fade-up">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Visibility</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Items)
+            {
+                <tr>
+                    <td><strong>@item.Name</strong></td>
+                    <td><small class="text-muted">@(item.Description?.Length > 80 ? item.Description[..80] + "…" : item.Description)</small></td>
+                    <td>
+                        @if (item.IsPublic)
+                        {
+                            <span class="badge bg-success">Public</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Private</span>
+                        }
+                    </td>
+                    <td><small>@item.CreatedAt.ToString("yyyy-MM-dd")</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="@EditUrlPrefix/@item.Id/edit" class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-outline-info" @onclick="() => OnTogglePublic.InvokeAsync(item.Id)" title="Toggle public">
+                                <i class="bi bi-eye@(item.IsPublic ? "-slash" : "")"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" @onclick="() => OnDelete.InvokeAsync(item.Id)" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Items.Any())
+            {
+                <tr><td colspan="5" class="text-center text-muted py-4">No items found.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<MyLibraryPage.LibraryRow> Items { get; set; } = [];
+    [Parameter, EditorRequired] public string EditUrlPrefix { get; set; } = "";
+    [Parameter] public EventCallback<Guid> OnTogglePublic { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+}

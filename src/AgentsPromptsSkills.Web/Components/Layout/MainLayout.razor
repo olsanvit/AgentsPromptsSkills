@@ -1,0 +1,67 @@
+@using System.Security.Claims
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 d-flex align-items-center justify-content-between">
+            <span class="fw-bold text-white">AgentsPromptsSkills</span>
+            <div class="d-flex align-items-center gap-2">
+                <AuthorizeView>
+                    <Authorized>
+                        <span class="text-muted small me-2">@_userName</span>
+                        <a href="/Identity/Account/Manage" class="btn btn-sm btn-outline-light">Account</a>
+                        <a href="/Identity/Account/Logout" class="btn btn-sm btn-outline-secondary ms-1">Logout</a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/Identity/Account/Login" class="btn btn-sm btn-outline-light">Login</a>
+                        <a href="/Identity/Account/Register" class="btn btn-sm btn-outline-secondary ms-1">Register</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+
+        <article class="content px-4">
+            <ErrorBoundary>
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent Context="ex">
+                    <div class="alert alert-danger m-3" role="alert">
+                        <h4 class="alert-heading">An error occurred</h4>
+                        <p>An unexpected error occurred while processing your request. Try reloading the page.</p>
+                        <hr />
+                        <p class="mb-0 text-muted small">@ex.Message</p>
+                    </div>
+                </ErrorContent>
+            </ErrorBoundary>
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">&#x2715;</span>
+</div>
+
+@code {
+    private string _userName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            _userName = user.FindFirstValue(ClaimTypes.Name)
+                     ?? user.FindFirstValue(ClaimTypes.Email)
+                     ?? "";
+        }
+    }
+}

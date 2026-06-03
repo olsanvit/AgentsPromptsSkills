@@ -1,0 +1,137 @@
+@page "/prompts"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Prompts — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h3"><i class="bi bi-chat-text me-2"></i>Prompts</h1>
+        <p class="text-muted mb-0">Browse reusable prompts.</p>
+    </div>
+    <a href="/create/prompt" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Create New Prompt
+    </a>
+</div>
+
+<div class="ui-panel ui-anim-fade-up mb-4">
+    <div class="row g-2">
+        <div class="col-md-4">
+            <input class="form-control" placeholder="Search prompts..." @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_typeFilter">
+                <option value="">All types</option>
+                <option value="System">System</option>
+                <option value="User">User</option>
+                <option value="Chain">Chain</option>
+                <option value="Template">Template</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_categoryFilter">
+                <option value="">All categories</option>
+                @foreach (var cat in _categories)
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else
+{
+    <div class="ui-panel ui-anim-fade-up">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Visibility</th>
+                    <th>Author</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var prompt in FilteredPrompts)
+                {
+                    <tr>
+                        <td>
+                            <strong>@prompt.Name</strong>
+                            @if (!string.IsNullOrWhiteSpace(prompt.Description))
+                            {
+                                <br /><small class="text-muted">@(prompt.Description.Length > 80 ? prompt.Description[..80] + "…" : prompt.Description)</small>
+                            }
+                        </td>
+                        <td><span class="badge bg-success">@(prompt.PromptType ?? "—")</span></td>
+                        <td>@(prompt.Category ?? "—")</td>
+                        <td>
+                            @if (prompt.IsPublic)
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Private</span>
+                            }
+                        </td>
+                        <td><small class="text-muted">@prompt.OwnerName</small></td>
+                        <td>
+                            <a href="/prompts/@prompt.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+                @if (!FilteredPrompts.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">No prompts found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private string _search = "";
+    private string _typeFilter = "";
+    private string _categoryFilter = "";
+    private string _userId = "";
+    private List<ApsPrompt> _prompts = [];
+    private List<string> _categories = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _prompts = await db.ApsPrompts
+            .Where(p => p.IsPublic || p.OwnerId == _userId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        _categories = _prompts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Category))
+            .Select(p => p.Category!)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+
+        _loading = false;
+    }
+
+    private IEnumerable<ApsPrompt> FilteredPrompts =>
+        _prompts
+            .Where(p => string.IsNullOrWhiteSpace(_search) || p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
+            .Where(p => string.IsNullOrWhiteSpace(_typeFilter) || p.PromptType == _typeFilter)
+            .Where(p => string.IsNullOrWhiteSpace(_categoryFilter) || p.Category == _categoryFilter);
+}

@@ -1,0 +1,142 @@
+@page "/my-library"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>My Library — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4">
+    <h1 class="h3"><i class="bi bi-bookmark-star me-2"></i>My Library</h1>
+    <p class="text-muted mb-0">All items you have created.</p>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <button class="nav-link @(_tab == "agents" ? "active" : "")" @onclick='() => _tab = "agents"'>
+            <i class="bi bi-robot me-1"></i> Agents (@_agents.Count)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(_tab == "prompts" ? "active" : "")" @onclick='() => _tab = "prompts"'>
+            <i class="bi bi-chat-text me-1"></i> Prompts (@_prompts.Count)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(_tab == "skills" ? "active" : "")" @onclick='() => _tab = "skills"'>
+            <i class="bi bi-lightning-charge me-1"></i> Skills (@_skills.Count)
+        </button>
+    </li>
+</ul>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else if (_tab == "agents")
+{
+    <LibraryTable Items="_agents.Select(a => new LibraryRow(a.Id, a.Name, a.Description, a.IsPublic, a.CreatedAt)).ToList()"
+                  EditUrlPrefix="/agents"
+                  OnTogglePublic="ToggleAgentPublic"
+                  OnDelete="DeleteAgent" />
+}
+else if (_tab == "prompts")
+{
+    <LibraryTable Items="_prompts.Select(p => new LibraryRow(p.Id, p.Name, p.Description, p.IsPublic, p.CreatedAt)).ToList()"
+                  EditUrlPrefix="/prompts"
+                  OnTogglePublic="TogglePromptPublic"
+                  OnDelete="DeletePrompt" />
+}
+else if (_tab == "skills")
+{
+    <LibraryTable Items="_skills.Select(s => new LibraryRow(s.Id, s.Name, s.Description, s.IsPublic, s.CreatedAt)).ToList()"
+                  EditUrlPrefix="/skills"
+                  OnTogglePublic="ToggleSkillPublic"
+                  OnDelete="DeleteSkill" />
+}
+
+@code {
+    private bool _loading = true;
+    private string _tab = "agents";
+    private string _userId = "";
+    private List<ApsAgent> _agents = [];
+    private List<ApsPrompt> _prompts = [];
+    private List<ApsSkill> _skills = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _agents  = await db.ApsAgents.Where(a => a.OwnerId == _userId).OrderByDescending(a => a.CreatedAt).ToListAsync();
+        _prompts = await db.ApsPrompts.Where(p => p.OwnerId == _userId).OrderByDescending(p => p.CreatedAt).ToListAsync();
+        _skills  = await db.ApsSkills.Where(s => s.OwnerId == _userId).OrderByDescending(s => s.CreatedAt).ToListAsync();
+        _loading = false;
+    }
+
+    private async Task ToggleAgentPublic(Guid id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var agent = await db.ApsAgents.FindAsync(id);
+        if (agent is null || agent.OwnerId != _userId) return;
+        agent.IsPublic = !agent.IsPublic;
+        await db.SaveChangesAsync();
+        var item = _agents.FirstOrDefault(a => a.Id == id);
+        if (item is not null) item.IsPublic = agent.IsPublic;
+    }
+
+    private async Task DeleteAgent(Guid id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var agent = await db.ApsAgents.FindAsync(id);
+        if (agent is null || agent.OwnerId != _userId) return;
+        db.ApsAgents.Remove(agent);
+        await db.SaveChangesAsync();
+        _agents.RemoveAll(a => a.Id == id);
+    }
+
+    private async Task TogglePromptPublic(Guid id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var prompt = await db.ApsPrompts.FindAsync(id);
+        if (prompt is null || prompt.OwnerId != _userId) return;
+        prompt.IsPublic = !prompt.IsPublic;
+        await db.SaveChangesAsync();
+        var item = _prompts.FirstOrDefault(p => p.Id == id);
+        if (item is not null) item.IsPublic = prompt.IsPublic;
+    }
+
+    private async Task DeletePrompt(Guid id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var prompt = await db.ApsPrompts.FindAsync(id);
+        if (prompt is null || prompt.OwnerId != _userId) return;
+        db.ApsPrompts.Remove(prompt);
+        await db.SaveChangesAsync();
+        _prompts.RemoveAll(p => p.Id == id);
+    }
+
+    private async Task ToggleSkillPublic(Guid id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var skill = await db.ApsSkills.FindAsync(id);
+        if (skill is null || skill.OwnerId != _userId) return;
+        skill.IsPublic = !skill.IsPublic;
+        await db.SaveChangesAsync();
+        var item = _skills.FirstOrDefault(s => s.Id == id);
+        if (item is not null) item.IsPublic = skill.IsPublic;
+    }
+
+    private async Task DeleteSkill(Guid id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var skill = await db.ApsSkills.FindAsync(id);
+        if (skill is null || skill.OwnerId != _userId) return;
+        db.ApsSkills.Remove(skill);
+        await db.SaveChangesAsync();
+        _skills.RemoveAll(s => s.Id == id);
+    }
+
+    internal record LibraryRow(Guid Id, string Name, string? Description, bool IsPublic, DateTime CreatedAt);
+}

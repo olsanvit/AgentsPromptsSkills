@@ -1,0 +1,127 @@
+@page "/create/agent"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Create Agent — AgentsPromptsSkills</PageTitle>
+
+<div class="ui-page-header mb-4">
+    <h1 class="h3"><i class="bi bi-robot me-2"></i>Create Agent</h1>
+</div>
+
+<div class="ui-panel ui-anim-fade-up" style="max-width: 720px;">
+    <EditForm Model="_model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="alert alert-danger" />
+
+        <div class="mb-3">
+            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <InputText class="form-control" @bind-Value="_model.Name" placeholder="My agent name" />
+            <ValidationMessage For="() => _model.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <InputTextArea class="form-control" @bind-Value="_model.Description" rows="3" placeholder="What does this agent do?" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">System Prompt <span class="text-danger">*</span></label>
+            <InputTextArea class="form-control font-monospace" @bind-Value="_model.SystemPrompt" rows="10"
+                           placeholder="You are a helpful assistant..." />
+            <ValidationMessage For="() => _model.SystemPrompt" />
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Model</label>
+                <InputSelect class="form-select" @bind-Value="_model.ModelName">
+                    <option value="claude-sonnet-4-5">claude-sonnet-4-5</option>
+                    <option value="claude-opus-4-5">claude-opus-4-5</option>
+                    <option value="claude-haiku-3-5">claude-haiku-3-5</option>
+                </InputSelect>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Category</label>
+                <InputText class="form-control" @bind-Value="_model.Category" placeholder="e.g. Coding, Writing…" />
+            </div>
+        </div>
+
+        <div class="form-check form-switch mb-4">
+            <InputCheckbox class="form-check-input" @bind-Value="_model.IsPublic" id="isPublicAgent" />
+            <label class="form-check-label" for="isPublicAgent">Make public</label>
+        </div>
+
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger">@_error</div>
+        }
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@_saving">
+                @if (_saving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Save Agent
+            </button>
+            <a href="/agents" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private AgentFormModel _model = new();
+    private bool _saving;
+    private string? _error;
+
+    private async Task SaveAsync()
+    {
+        _error = null;
+        _saving = true;
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            var userName = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var agent = new ApsAgent
+            {
+                Id          = Guid.NewGuid(),
+                Name        = _model.Name,
+                Description = _model.Description,
+                SystemPrompt = _model.SystemPrompt,
+                ModelName   = _model.ModelName,
+                Category    = _model.Category,
+                IsPublic    = _model.IsPublic,
+                OwnerId     = userId,
+                OwnerName   = userName,
+                CreatedAt   = DateTime.UtcNow,
+                LikeCount   = 0
+            };
+            db.ApsAgents.Add(agent);
+            await db.SaveChangesAsync();
+            Navigation.NavigateTo("/agents");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class AgentFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+        [System.ComponentModel.DataAnnotations.Required]
+        public string SystemPrompt { get; set; } = "";
+        public string ModelName { get; set; } = "claude-sonnet-4-5";
+        public string? Category { get; set; }
+        public bool IsPublic { get; set; }
+    }
+}

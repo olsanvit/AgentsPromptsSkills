@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- NU1903: Kiota vulnerability in transitive dependency via Microsoft.Graph - suppressed until Microsoft.Graph updates Kiota -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
+  </PropertyGroup>
+</Project>
