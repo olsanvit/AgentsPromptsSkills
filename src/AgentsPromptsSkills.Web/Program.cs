@@ -3,6 +3,7 @@ using FluentValidation;
 using AgentsPromptsSkills.Web.Services;
 using AgentsPromptsSkills.Web.Components;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Exceptions;
@@ -114,6 +115,10 @@ TaskScheduler.UnobservedTaskException += (_, e) =>
 var app = builder.Build();
 
 // ── Path base ───────────────────────────────────────────────────────────────
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 var pathBase = builder.Configuration["PathBase"];
 if (!string.IsNullOrWhiteSpace(pathBase))
     app.UsePathBase(pathBase);
