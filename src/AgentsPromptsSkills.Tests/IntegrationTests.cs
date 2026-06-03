@@ -12,7 +12,8 @@ public class IntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         _client = factory.WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("ConnectionStrings:ApsDatabase", "DataSource=:memory:");
+            builder.UseSetting("ConnectionStrings:ApsDatabase", "Host=localhost;Port=54321;Database=ci_test_db");
+            builder.UseSetting("Anthropic:ApiKey", "sk-test");
         }).CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
