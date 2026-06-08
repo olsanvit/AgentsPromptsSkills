@@ -31,10 +31,10 @@
             <div class="col-md-6">
                 <label class="form-label">Prompt Type</label>
                 <InputSelect class="form-select" @bind-Value="_model.PromptType">
-                    <option value="System">System</option>
-                    <option value="User">User</option>
-                    <option value="Chain">Chain</option>
-                    <option value="Template">Template</option>
+                    <option value="General">General</option>
+                    <option value="AgentSystem">Agent System</option>
+                    <option value="AgentUser">Agent User</option>
+                    <option value="SkillInstruction">Skill Instruction</option>
                 </InputSelect>
             </div>
             <div class="col-md-6">
@@ -88,17 +88,14 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var prompt = new ApsPrompt
             {
-                Id          = Guid.NewGuid(),
-                Name        = _model.Name,
-                Description = _model.Description,
-                Content     = _model.Content,
-                PromptType  = _model.PromptType,
-                Category    = _model.Category,
-                IsPublic    = _model.IsPublic,
-                OwnerId     = userId,
-                OwnerName   = userName,
-                CreatedAt   = DateTime.UtcNow,
-                LikeCount   = 0
+                Name         = _model.Name,
+                Description  = _model.Description ?? "",
+                Content      = _model.Content,
+                PromptType   = Enum.Parse<ApsPromptType>(_model.PromptType),
+                CategoryName = _model.Category ?? "",
+                IsPublic     = _model.IsPublic,
+                OwnerId      = userId,
+                OwnerName    = userName
             };
             db.ApsPrompts.Add(prompt);
             await db.SaveChangesAsync();
@@ -121,7 +118,7 @@
         public string? Description { get; set; }
         [System.ComponentModel.DataAnnotations.Required]
         public string Content { get; set; } = "";
-        public string PromptType { get; set; } = "System";
+        public string PromptType { get; set; } = "General";
         public string? Category { get; set; }
         public bool IsPublic { get; set; }
     }

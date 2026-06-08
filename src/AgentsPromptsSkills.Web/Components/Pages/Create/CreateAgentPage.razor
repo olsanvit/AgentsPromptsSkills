@@ -87,17 +87,14 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var agent = new ApsAgent
             {
-                Id          = Guid.NewGuid(),
-                Name        = _model.Name,
-                Description = _model.Description,
+                Name         = _model.Name,
+                Description  = _model.Description ?? "",
                 SystemPrompt = _model.SystemPrompt,
-                ModelName   = _model.ModelName,
-                Category    = _model.Category,
-                IsPublic    = _model.IsPublic,
-                OwnerId     = userId,
-                OwnerName   = userName,
-                CreatedAt   = DateTime.UtcNow,
-                LikeCount   = 0
+                ModelName    = _model.ModelName,
+                CategoryName = _model.Category ?? "",
+                IsPublic     = _model.IsPublic,
+                OwnerId      = userId,
+                OwnerName    = userName
             };
             db.ApsAgents.Add(agent);
             await db.SaveChangesAsync();

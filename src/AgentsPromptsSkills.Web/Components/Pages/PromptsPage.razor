@@ -25,10 +25,10 @@
         <div class="col-md-3">
             <select class="form-select" @bind="_typeFilter">
                 <option value="">All types</option>
-                <option value="System">System</option>
-                <option value="User">User</option>
-                <option value="Chain">Chain</option>
-                <option value="Template">Template</option>
+                <option value="General">General</option>
+                <option value="AgentSystem">Agent System</option>
+                <option value="AgentUser">Agent User</option>
+                <option value="SkillInstruction">Skill Instruction</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -72,8 +72,8 @@ else
                                 <br /><small class="text-muted">@(prompt.Description.Length > 80 ? prompt.Description[..80] + "…" : prompt.Description)</small>
                             }
                         </td>
-                        <td><span class="badge bg-success">@(prompt.PromptType ?? "—")</span></td>
-                        <td>@(prompt.Category ?? "—")</td>
+                        <td><span class="badge bg-success">@prompt.PromptType.ToString()</span></td>
+                        <td>@(string.IsNullOrEmpty(prompt.CategoryName) ? "—" : prompt.CategoryName)</td>
                         <td>
                             @if (prompt.IsPublic)
                             {
@@ -86,7 +86,7 @@ else
                         </td>
                         <td><small class="text-muted">@prompt.OwnerName</small></td>
                         <td>
-                            <a href="/prompts/@prompt.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <a href="/prompts/@prompt.Guid" class="btn btn-sm btn-outline-primary">View</a>
                         </td>
                     </tr>
                 }
@@ -120,8 +120,8 @@ else
             .ToListAsync();
 
         _categories = _prompts
-            .Where(p => !string.IsNullOrWhiteSpace(p.Category))
-            .Select(p => p.Category!)
+            .Where(p => !string.IsNullOrWhiteSpace(p.CategoryName))
+            .Select(p => p.CategoryName)
             .Distinct()
             .OrderBy(c => c)
             .ToList();
@@ -132,6 +132,6 @@ else
     private IEnumerable<ApsPrompt> FilteredPrompts =>
         _prompts
             .Where(p => string.IsNullOrWhiteSpace(_search) || p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
-            .Where(p => string.IsNullOrWhiteSpace(_typeFilter) || p.PromptType == _typeFilter)
-            .Where(p => string.IsNullOrWhiteSpace(_categoryFilter) || p.Category == _categoryFilter);
+            .Where(p => string.IsNullOrWhiteSpace(_typeFilter) || p.PromptType.ToString() == _typeFilter)
+            .Where(p => string.IsNullOrWhiteSpace(_categoryFilter) || p.CategoryName == _categoryFilter);
 }

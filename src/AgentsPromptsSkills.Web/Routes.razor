@@ -1,6 +1,6 @@
 <Router AppAssembly="typeof(App).Assembly">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
             <NotAuthorized>
                 @if (context.User.Identity?.IsAuthenticated != true)
                 {
@@ -16,7 +16,7 @@
     </Found>
     <NotFound>
         <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="typeof(Layout.MainLayout)">
+        <LayoutView Layout="typeof(MainLayout)">
             <div class="ui-page-header">
                 <h1>Page not found</h1>
             </div>

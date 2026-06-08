@@ -93,25 +93,53 @@ else
     {
         await using var db = await DbFactory.CreateDbContextAsync();
 
-        var agents = await db.ApsAgents
+        var agentEntities = await db.ApsAgents
             .Where(a => a.IsPublic)
-            .Select(a => new DiscoverItem(a.Id, a.Name, "Agent", a.Description, a.Category, a.OwnerName, a.LikeCount, a.Tags))
+            .AsNoTracking()
             .ToListAsync();
+        var agentGuids = agentEntities.Select(a => a.Guid).ToList();
+        var agentTagLinks = await db.ApsTagLinks
+            .Where(tl => tl.EntityType == "Agent" && agentGuids.Contains(tl.EntityId))
+            .Include(tl => tl.Tag)
+            .AsNoTracking()
+            .ToListAsync();
+        var agents = agentEntities.Select(a => new DiscoverItem(
+            a.Guid, a.Name, "Agent", a.Description, a.CategoryName, a.OwnerName, a.LikeCount,
+            agentTagLinks.Where(tl => tl.EntityId == a.Guid).Select(tl => tl.Tag.Name).ToList())).ToList();
 
-        var prompts = await db.ApsPrompts
+        var promptEntities = await db.ApsPrompts
             .Where(p => p.IsPublic)
-            .Select(p => new DiscoverItem(p.Id, p.Name, "Prompt", p.Description, p.Category, p.OwnerName, p.LikeCount, p.Tags))
+            .AsNoTracking()
             .ToListAsync();
+        var promptGuids = promptEntities.Select(p => p.Guid).ToList();
+        var promptTagLinks = await db.ApsTagLinks
+            .Where(tl => tl.EntityType == "Prompt" && promptGuids.Contains(tl.EntityId))
+            .Include(tl => tl.Tag)
+            .AsNoTracking()
+            .ToListAsync();
+        var prompts = promptEntities.Select(p => new DiscoverItem(
+            p.Guid, p.Name, "Prompt", p.Description, p.CategoryName, p.OwnerName, p.LikeCount,
+            promptTagLinks.Where(tl => tl.EntityId == p.Guid).Select(tl => tl.Tag.Name).ToList())).ToList();
 
-        var skills = await db.ApsSkills
+        var skillEntities = await db.ApsSkills
             .Where(s => s.IsPublic)
-            .Select(s => new DiscoverItem(s.Id, s.Name, "Skill", s.Description, s.Category, s.OwnerName, s.LikeCount, s.Tags))
+            .AsNoTracking()
             .ToListAsync();
+        var skillGuids = skillEntities.Select(s => s.Guid).ToList();
+        var skillTagLinks = await db.ApsTagLinks
+            .Where(tl => tl.EntityType == "Skill" && skillGuids.Contains(tl.EntityId))
+            .Include(tl => tl.Tag)
+            .AsNoTracking()
+            .ToListAsync();
+        var skills = skillEntities.Select(s => new DiscoverItem(
+            s.Guid, s.Name, "Skill", s.Description, s.CategoryName, s.OwnerName, s.LikeCount,
+            skillTagLinks.Where(tl => tl.EntityId == s.Guid).Select(tl => tl.Tag.Name).ToList())).ToList();
 
         _items = [.. agents, .. prompts, .. skills];
         _categories = _items
             .Where(i => !string.IsNullOrWhiteSpace(i.Category))
             .Select(i => i.Category!)
+            .Where(c => c is not null)
             .Distinct()
             .OrderBy(c => c)
             .ToList();

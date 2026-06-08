@@ -23,7 +23,7 @@
                     <option value="">— Manual system prompt —</option>
                     @foreach (var agent in _agents)
                     {
-                        <option value="@agent.Id">@agent.Name</option>
+                        <option value="@agent.Guid">@agent.Name</option>
                     }
                 </select>
             </div>
@@ -117,8 +117,8 @@
                 @foreach (var s in _sessions)
                 {
                     <tr>
-                        <td><small>@s.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
-                        <td><small>@(s.AgentName ?? "Manual")</small></td>
+                        <td><small>@s.SessionCreatedAt.ToString("yyyy-MM-dd HH:mm")</small></td>
+                        <td><small>@(s.Agent?.Name ?? "Manual")</small></td>
                         <td><small>@s.ModelName</small></td>
                         <td><small>@s.InputTokens / @s.OutputTokens</small></td>
                         <td><small>@s.DurationMs ms</small></td>
@@ -154,7 +154,8 @@
 
         _sessions = await db.ApsPlaygroundSessions
             .Where(s => s.OwnerId == _userId)
-            .OrderByDescending(s => s.CreatedAt)
+            .Include(s => s.Agent)
+            .OrderByDescending(s => s.SessionCreatedAt)
             .Take(10)
             .ToListAsync();
     }
@@ -178,7 +179,7 @@
 
             if (agentId.HasValue)
             {
-                var agent = _agents.FirstOrDefault(a => a.Id == agentId.Value);
+                var agent = _agents.FirstOrDefault(a => a.Guid == agentId.Value);
                 if (agent is not null)
                     systemPrompt = agent.SystemPrompt ?? "";
             }
@@ -189,7 +190,8 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             _sessions = await db.ApsPlaygroundSessions
                 .Where(s => s.OwnerId == _userId)
-                .OrderByDescending(s => s.CreatedAt)
+                .Include(s => s.Agent)
+                .OrderByDescending(s => s.SessionCreatedAt)
                 .Take(10)
                 .ToListAsync();
         }

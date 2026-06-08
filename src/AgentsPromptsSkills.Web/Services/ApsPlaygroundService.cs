@@ -41,18 +41,18 @@ public sealed class ApsPlaygroundService
 
         var messages = new List<Message>
         {
-            new() { Role = RoleType.User, Content = userMessage }
+            new(RoleType.User, userMessage)
         };
 
         var parameters = new MessageParameters
         {
-            Model    = modelName,
+            Model     = modelName,
             MaxTokens = 4096,
-            Messages = messages
+            Messages  = messages
         };
 
         if (!string.IsNullOrWhiteSpace(systemPrompt))
-            parameters.System = [new SystemMessage(systemPrompt)];
+            parameters.SystemMessage = systemPrompt;
 
         MessageResponse response;
         try
@@ -80,26 +80,16 @@ public sealed class ApsPlaygroundService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var session = new ApsPlaygroundSession
         {
-            Id           = Guid.NewGuid(),
-            OwnerId      = ownerId,
-            AgentId      = agentId,
-            ModelName    = modelName,
-            SystemPrompt = systemPrompt,
-            UserMessage  = userMessage,
-            ResponseText = responseText,
-            InputTokens  = inputTokens,
-            OutputTokens = outputTokens,
-            DurationMs   = durationMs,
-            CreatedAt    = DateTime.UtcNow
+            OwnerId          = ownerId,
+            AgentId          = agentId,
+            ModelName        = modelName,
+            SystemPrompt     = systemPrompt,
+            UserMessage      = userMessage,
+            AssistantResponse = responseText,
+            InputTokens      = inputTokens,
+            OutputTokens     = outputTokens,
+            DurationMs       = durationMs
         };
-
-        // Fetch AgentName for display
-        if (agentId.HasValue)
-        {
-            var agent = await db.ApsAgents.AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Id == agentId.Value, ct);
-            session.AgentName = agent?.Name;
-        }
 
         db.ApsPlaygroundSessions.Add(session);
         await db.SaveChangesAsync(ct);

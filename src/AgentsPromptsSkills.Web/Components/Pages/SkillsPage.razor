@@ -25,10 +25,8 @@
         <div class="col-md-3">
             <select class="form-select" @bind="_typeFilter">
                 <option value="">All types</option>
-                <option value="CodeExecution">Code Execution</option>
-                <option value="WebSearch">Web Search</option>
-                <option value="FileIO">File I/O</option>
-                <option value="ApiCall">API Call</option>
+                <option value="ClaudeCode">Claude Code</option>
+                <option value="AgentSDK">Agent SDK</option>
                 <option value="Custom">Custom</option>
             </select>
         </div>
@@ -49,7 +47,7 @@ else
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h5 class="card-title mb-0">@skill.Name</h5>
-                            <span class="badge bg-warning text-dark">@(skill.SkillType ?? "Custom")</span>
+                            <span class="badge bg-warning text-dark">@skill.SkillType.ToString()</span>
                         </div>
                         <p class="card-text text-muted small">
                             @(skill.Description?.Length > 120 ? skill.Description[..120] + "…" : skill.Description)
@@ -67,7 +65,7 @@ else
                         </div>
                     </div>
                     <div class="card-footer bg-transparent border-0">
-                        <a href="/skills/@skill.Id" class="btn btn-sm btn-outline-primary w-100">View</a>
+                        <a href="/skills/@skill.Guid" class="btn btn-sm btn-outline-primary w-100">View</a>
                     </div>
                 </div>
             </div>
@@ -103,5 +101,5 @@ else
     private IEnumerable<ApsSkill> FilteredSkills =>
         _skills
             .Where(s => string.IsNullOrWhiteSpace(_search) || s.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
-            .Where(s => string.IsNullOrWhiteSpace(_typeFilter) || s.SkillType == _typeFilter);
+            .Where(s => string.IsNullOrWhiteSpace(_typeFilter) || s.SkillType.ToString() == _typeFilter);
 }

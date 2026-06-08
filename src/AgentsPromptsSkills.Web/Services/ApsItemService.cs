@@ -50,17 +50,17 @@ public sealed class ApsItemService
         {
             case "Agent":
                 await db.ApsAgents
-                    .Where(a => a.Id == id)
+                    .Where(a => a.Guid == id)
                     .ExecuteUpdateAsync(s => s.SetProperty(a => a.LikeCount, a => a.LikeCount + 1), ct);
                 break;
             case "Prompt":
                 await db.ApsPrompts
-                    .Where(p => p.Id == id)
+                    .Where(p => p.Guid == id)
                     .ExecuteUpdateAsync(s => s.SetProperty(p => p.LikeCount, p => p.LikeCount + 1), ct);
                 break;
             case "Skill":
                 await db.ApsSkills
-                    .Where(s => s.Id == id)
+                    .Where(s => s.Guid == id)
                     .ExecuteUpdateAsync(s => s.SetProperty(sk => sk.LikeCount, sk => sk.LikeCount + 1), ct);
                 break;
         }

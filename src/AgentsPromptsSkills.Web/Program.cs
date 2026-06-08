@@ -1,5 +1,6 @@
 using Anthropic.SDK;
 using FluentValidation;
+using AgentsPromptsSkills.Web;
 using AgentsPromptsSkills.Web.Services;
 using AgentsPromptsSkills.Web.Components;
 using MercenariesAndBeasts.Infrastructure;

@@ -35,21 +35,21 @@
 }
 else if (_tab == "agents")
 {
-    <LibraryTable Items="_agents.Select(a => new LibraryRow(a.Id, a.Name, a.Description, a.IsPublic, a.CreatedAt)).ToList()"
+    <LibraryTable Items="_agents.Select(a => new LibraryRow(a.Guid, a.Name, a.Description, a.IsPublic, a.CreatedAt.UtcDateTime)).ToList()"
                   EditUrlPrefix="/agents"
                   OnTogglePublic="ToggleAgentPublic"
                   OnDelete="DeleteAgent" />
 }
 else if (_tab == "prompts")
 {
-    <LibraryTable Items="_prompts.Select(p => new LibraryRow(p.Id, p.Name, p.Description, p.IsPublic, p.CreatedAt)).ToList()"
+    <LibraryTable Items="_prompts.Select(p => new LibraryRow(p.Guid, p.Name, p.Description, p.IsPublic, p.CreatedAt.UtcDateTime)).ToList()"
                   EditUrlPrefix="/prompts"
                   OnTogglePublic="TogglePromptPublic"
                   OnDelete="DeletePrompt" />
 }
 else if (_tab == "skills")
 {
-    <LibraryTable Items="_skills.Select(s => new LibraryRow(s.Id, s.Name, s.Description, s.IsPublic, s.CreatedAt)).ToList()"
+    <LibraryTable Items="_skills.Select(s => new LibraryRow(s.Guid, s.Name, s.Description, s.IsPublic, s.CreatedAt.UtcDateTime)).ToList()"
                   EditUrlPrefix="/skills"
                   OnTogglePublic="ToggleSkillPublic"
                   OnDelete="DeleteSkill" />
@@ -82,7 +82,7 @@ else if (_tab == "skills")
         if (agent is null || agent.OwnerId != _userId) return;
         agent.IsPublic = !agent.IsPublic;
         await db.SaveChangesAsync();
-        var item = _agents.FirstOrDefault(a => a.Id == id);
+        var item = _agents.FirstOrDefault(a => a.Guid == id);
         if (item is not null) item.IsPublic = agent.IsPublic;
     }
 
@@ -93,7 +93,7 @@ else if (_tab == "skills")
         if (agent is null || agent.OwnerId != _userId) return;
         db.ApsAgents.Remove(agent);
         await db.SaveChangesAsync();
-        _agents.RemoveAll(a => a.Id == id);
+        _agents.RemoveAll(a => a.Guid == id);
     }
 
     private async Task TogglePromptPublic(Guid id)
@@ -103,7 +103,7 @@ else if (_tab == "skills")
         if (prompt is null || prompt.OwnerId != _userId) return;
         prompt.IsPublic = !prompt.IsPublic;
         await db.SaveChangesAsync();
-        var item = _prompts.FirstOrDefault(p => p.Id == id);
+        var item = _prompts.FirstOrDefault(p => p.Guid == id);
         if (item is not null) item.IsPublic = prompt.IsPublic;
     }
 
@@ -114,7 +114,7 @@ else if (_tab == "skills")
         if (prompt is null || prompt.OwnerId != _userId) return;
         db.ApsPrompts.Remove(prompt);
         await db.SaveChangesAsync();
-        _prompts.RemoveAll(p => p.Id == id);
+        _prompts.RemoveAll(p => p.Guid == id);
     }
 
     private async Task ToggleSkillPublic(Guid id)
@@ -124,7 +124,7 @@ else if (_tab == "skills")
         if (skill is null || skill.OwnerId != _userId) return;
         skill.IsPublic = !skill.IsPublic;
         await db.SaveChangesAsync();
-        var item = _skills.FirstOrDefault(s => s.Id == id);
+        var item = _skills.FirstOrDefault(s => s.Guid == id);
         if (item is not null) item.IsPublic = skill.IsPublic;
     }
 
@@ -135,8 +135,8 @@ else if (_tab == "skills")
         if (skill is null || skill.OwnerId != _userId) return;
         db.ApsSkills.Remove(skill);
         await db.SaveChangesAsync();
-        _skills.RemoveAll(s => s.Id == id);
+        _skills.RemoveAll(s => s.Guid == id);
     }
 
-    internal record LibraryRow(Guid Id, string Name, string? Description, bool IsPublic, DateTime CreatedAt);
+    public record LibraryRow(Guid Id, string Name, string? Description, bool IsPublic, DateTime CreatedAt);
 }

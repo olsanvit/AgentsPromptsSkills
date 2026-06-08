@@ -31,10 +31,8 @@
             <div class="col-md-6">
                 <label class="form-label">Skill Type</label>
                 <InputSelect class="form-select" @bind-Value="_model.SkillType">
-                    <option value="CodeExecution">Code Execution</option>
-                    <option value="WebSearch">Web Search</option>
-                    <option value="FileIO">File I/O</option>
-                    <option value="ApiCall">API Call</option>
+                    <option value="ClaudeCode">Claude Code</option>
+                    <option value="AgentSDK">Agent SDK</option>
                     <option value="Custom">Custom</option>
                 </InputSelect>
             </div>
@@ -89,17 +87,14 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             var skill = new ApsSkill
             {
-                Id          = Guid.NewGuid(),
-                Name        = _model.Name,
-                Description = _model.Description,
-                Content     = _model.Content,
-                SkillType   = _model.SkillType,
-                Category    = _model.Category,
-                IsPublic    = _model.IsPublic,
-                OwnerId     = userId,
-                OwnerName   = userName,
-                CreatedAt   = DateTime.UtcNow,
-                LikeCount   = 0
+                Name         = _model.Name,
+                Description  = _model.Description ?? "",
+                Content      = _model.Content,
+                SkillType    = Enum.Parse<ApsSkillType>(_model.SkillType),
+                CategoryName = _model.Category ?? "",
+                IsPublic     = _model.IsPublic,
+                OwnerId      = userId,
+                OwnerName    = userName
             };
             db.ApsSkills.Add(skill);
             await db.SaveChangesAsync();
@@ -122,7 +117,7 @@
         public string? Description { get; set; }
         [System.ComponentModel.DataAnnotations.Required]
         public string Content { get; set; } = "";
-        public string SkillType { get; set; } = "Custom";
+        public string SkillType { get; set; } = "ClaudeCode";
         public string? Category { get; set; }
         public bool IsPublic { get; set; }
     }

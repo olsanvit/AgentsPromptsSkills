@@ -64,7 +64,7 @@ else
                             }
                         </td>
                         <td><span class="badge bg-info text-dark">@(agent.ModelName ?? "—")</span></td>
-                        <td>@(agent.Category ?? "—")</td>
+                        <td>@(string.IsNullOrEmpty(agent.CategoryName) ? "—" : agent.CategoryName)</td>
                         <td>
                             @if (agent.IsPublic)
                             {
@@ -77,7 +77,7 @@ else
                         </td>
                         <td>@agent.LikeCount</td>
                         <td>
-                            <a href="/agents/@agent.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <a href="/agents/@agent.Guid" class="btn btn-sm btn-outline-primary">View</a>
                         </td>
                     </tr>
                 }
@@ -110,8 +110,8 @@ else
             .ToListAsync();
 
         _categories = _agents
-            .Where(a => !string.IsNullOrWhiteSpace(a.Category))
-            .Select(a => a.Category!)
+            .Where(a => !string.IsNullOrWhiteSpace(a.CategoryName))
+            .Select(a => a.CategoryName)
             .Distinct()
             .OrderBy(c => c)
             .ToList();
@@ -122,5 +122,5 @@ else
     private IEnumerable<ApsAgent> FilteredAgents =>
         _agents
             .Where(a => string.IsNullOrWhiteSpace(_search) || a.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
-            .Where(a => string.IsNullOrWhiteSpace(_categoryFilter) || a.Category == _categoryFilter);
+            .Where(a => string.IsNullOrWhiteSpace(_categoryFilter) || a.CategoryName == _categoryFilter);
 }
