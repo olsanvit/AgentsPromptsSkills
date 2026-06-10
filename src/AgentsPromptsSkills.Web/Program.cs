@@ -221,6 +221,9 @@ using (var scope = app.Services.CreateScope())
     await EnsureAdminAsync(userManager, adminRole, "olsanskyvitek@gmail.com", "vitek", "Vitek575");
 }
 
+// Seed role a admin účet
+await AdminUserSeeder.SeedAsync(app.Services, app.Configuration);
+
 app.Lifetime.ApplicationStopping.Register(() =>
     Log.Warning("Application stopping — flushing logs..."));
 
