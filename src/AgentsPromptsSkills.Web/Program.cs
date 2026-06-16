@@ -54,6 +54,7 @@ builder.Services.AddRazorPages();
 
 // ── UI ──────────────────────────────────────────────────────────────────────
 builder.Services.AddSharedUI(builder.Configuration);
+builder.Services.AddGlobalErrorNotifications();
 
 // ── Database ────────────────────────────────────────────────────────────────
 var csRaw = builder.Configuration.GetConnectionString("ApsDatabase");
