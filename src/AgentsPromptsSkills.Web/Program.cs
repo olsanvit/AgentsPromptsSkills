@@ -5,6 +5,7 @@ using AgentsPromptsSkills.Web.Services;
 using AgentsPromptsSkills.Web.Components;
 using MercenariesAndBeasts.Infrastructure;
 using MercenariesAndBeasts.Infrastructure.Auth;
+using MercenariesAndBeasts.Infrastructure.Localization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,7 @@ builder.Services.AddRazorPages();
 
 // ── UI ──────────────────────────────────────────────────────────────────────
 builder.Services.AddSharedUI(builder.Configuration);
+builder.Services.AddSimpleLocalization();
 builder.Services.AddGlobalErrorNotifications();
 
 // ── Database ────────────────────────────────────────────────────────────────
@@ -126,12 +128,14 @@ app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
 app.MapStaticAssets();
 app.UseStaticFiles();
+app.UseRequestLocalization();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapRazorPages();
+app.MapMabCultureEndpoint();
 
 // ── Google OAuth external login endpoints ────────────────────────────────────
 app.MapPost("/Identity/Account/ExternalLogin", async (
