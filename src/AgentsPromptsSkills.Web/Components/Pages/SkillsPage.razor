@@ -17,7 +17,7 @@
 </div>
 
 <div class="ui-panel ui-anim-fade-up mb-4">
-    <div class="row g-2">
+    <div class="row g-2 mb-2">
         <div class="col-md-5">
             <input class="form-control" placeholder="Search skills..." @bind="_search" @bind:event="oninput" />
         </div>
@@ -30,6 +30,22 @@
             </select>
         </div>
     </div>
+    @if (_tags.Count > 0)
+    {
+        <div class="d-flex flex-wrap gap-1 pt-1 border-top border-opacity-10">
+            <button class="btn btn-sm @(_tagFilter == null ? "btn-primary" : "btn-outline-secondary")"
+                    @onclick="() => SetTagFilterAsync(null)">All tags</button>
+            @foreach (var tag in _tags)
+            {
+                var isActive = _tagFilter == tag.Guid;
+                <button class="btn btn-sm @(isActive ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => SetTagFilterAsync(isActive ? null : tag.Guid)">
+                    # @tag.Name
+                    <span class="badge bg-secondary ms-1">@_tagCounts.GetValueOrDefault(tag.Guid, 0)</span>
+                </button>
+            }
+        </div>
+    }
 </div>
 
 @if (_loading)
@@ -80,8 +96,12 @@ else
     private bool _loading = true;
     private string _search = "";
     private string _typeFilter = "";
+    private Guid? _tagFilter;
     private string _userId = "";
     private List<ApsSkill> _skills = [];
+    private List<ApsTag> _tags = [];
+    private Dictionary<Guid, int> _tagCounts = [];
+    private HashSet<Guid> _taggedEntityIds = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -94,11 +114,42 @@ else
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync();
 
+        var skillIds = _skills.Select(s => s.Guid).ToHashSet();
+        var links = await db.ApsTagLinks
+            .Include(l => l.Tag)
+            .Where(l => l.EntityType == "Skill" && skillIds.Contains(l.EntityId))
+            .ToListAsync();
+
+        _tagCounts = links.GroupBy(l => l.TagId).ToDictionary(g => g.Key, g => g.Count());
+        _tags = links.Select(l => l.Tag).DistinctBy(t => t.Guid).OrderBy(t => t.Name).ToList();
+
         _loading = false;
     }
 
-    private IEnumerable<ApsSkill> FilteredSkills =>
-        _skills
-            .Where(s => string.IsNullOrWhiteSpace(_search) || s.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
-            .Where(s => string.IsNullOrWhiteSpace(_typeFilter) || s.SkillType.ToString() == _typeFilter);
+    private IEnumerable<ApsSkill> FilteredSkills
+    {
+        get
+        {
+            var q = _skills.AsEnumerable()
+                .Where(s => string.IsNullOrWhiteSpace(_search) || s.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
+                .Where(s => string.IsNullOrWhiteSpace(_typeFilter) || s.SkillType.ToString() == _typeFilter);
+            if (_tagFilter.HasValue)
+                q = q.Where(s => _taggedEntityIds.Contains(s.Guid));
+            return q;
+        }
+    }
+
+    private async Task SetTagFilterAsync(Guid? tagId)
+    {
+        _tagFilter = tagId;
+        if (tagId.HasValue)
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var ids = await db.ApsTagLinks
+                .Where(l => l.EntityType == "Skill" && l.TagId == tagId.Value)
+                .Select(l => l.EntityId).ToListAsync();
+            _taggedEntityIds = ids.ToHashSet();
+        }
+        else { _taggedEntityIds = []; }
+    }
 }

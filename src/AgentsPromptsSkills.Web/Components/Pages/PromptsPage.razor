@@ -17,7 +17,7 @@
 </div>
 
 <div class="ui-panel ui-anim-fade-up mb-4">
-    <div class="row g-2">
+    <div class="row g-2 mb-2">
         <div class="col-md-4">
             <input class="form-control" placeholder="Search prompts..." @bind="_search" @bind:event="oninput" />
         </div>
@@ -40,6 +40,22 @@
             </select>
         </div>
     </div>
+    @if (_tags.Count > 0)
+    {
+        <div class="d-flex flex-wrap gap-1 pt-1 border-top border-opacity-10">
+            <button class="btn btn-sm @(_tagFilter == null ? "btn-primary" : "btn-outline-secondary")"
+                    @onclick="() => SetTagFilterAsync(null)">All tags</button>
+            @foreach (var tag in _tags)
+            {
+                var isActive = _tagFilter == tag.Guid;
+                <button class="btn btn-sm @(isActive ? "btn-primary" : "btn-outline-secondary")"
+                        @onclick="() => SetTagFilterAsync(isActive ? null : tag.Guid)">
+                    # @tag.Name
+                    <span class="badge bg-secondary ms-1">@_tagCounts.GetValueOrDefault(tag.Guid, 0)</span>
+                </button>
+            }
+        </div>
+    }
 </div>
 
 @if (_loading)
@@ -103,9 +119,13 @@ else
     private string _search = "";
     private string _typeFilter = "";
     private string _categoryFilter = "";
+    private Guid? _tagFilter;
     private string _userId = "";
     private List<ApsPrompt> _prompts = [];
     private List<string> _categories = [];
+    private List<ApsTag> _tags = [];
+    private Dictionary<Guid, int> _tagCounts = [];
+    private HashSet<Guid> _taggedEntityIds = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,12 +145,56 @@ else
             .OrderBy(c => c)
             .ToList();
 
+        var promptIds = _prompts.Select(p => p.Guid).ToHashSet();
+        var links = await db.ApsTagLinks
+            .Include(l => l.Tag)
+            .Where(l => l.EntityType == "Prompt" && promptIds.Contains(l.EntityId))
+            .ToListAsync();
+
+        _tagCounts = links
+            .GroupBy(l => l.TagId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        _tags = links
+            .Select(l => l.Tag)
+            .DistinctBy(t => t.Guid)
+            .OrderBy(t => t.Name)
+            .ToList();
+
         _loading = false;
     }
 
-    private IEnumerable<ApsPrompt> FilteredPrompts =>
-        _prompts
-            .Where(p => string.IsNullOrWhiteSpace(_search) || p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
-            .Where(p => string.IsNullOrWhiteSpace(_typeFilter) || p.PromptType.ToString() == _typeFilter)
-            .Where(p => string.IsNullOrWhiteSpace(_categoryFilter) || p.CategoryName == _categoryFilter);
+    private IEnumerable<ApsPrompt> FilteredPrompts
+    {
+        get
+        {
+            var q = _prompts.AsEnumerable()
+                .Where(p => string.IsNullOrWhiteSpace(_search) || p.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))
+                .Where(p => string.IsNullOrWhiteSpace(_typeFilter) || p.PromptType.ToString() == _typeFilter)
+                .Where(p => string.IsNullOrWhiteSpace(_categoryFilter) || p.CategoryName == _categoryFilter);
+
+            if (_tagFilter.HasValue)
+                q = q.Where(p => _taggedEntityIds.Contains(p.Guid));
+
+            return q;
+        }
+    }
+
+    private async Task SetTagFilterAsync(Guid? tagId)
+    {
+        _tagFilter = tagId;
+        if (tagId.HasValue)
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var ids = await db.ApsTagLinks
+                .Where(l => l.EntityType == "Prompt" && l.TagId == tagId.Value)
+                .Select(l => l.EntityId)
+                .ToListAsync();
+            _taggedEntityIds = ids.ToHashSet();
+        }
+        else
+        {
+            _taggedEntityIds = [];
+        }
+    }
 }

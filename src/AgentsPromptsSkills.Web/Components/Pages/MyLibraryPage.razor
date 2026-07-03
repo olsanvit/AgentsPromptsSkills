@@ -8,7 +8,7 @@
 
 <div class="ui-page-header mb-4">
     <h1 class="h3"><i class="bi bi-bookmark-star me-2"></i>My Library</h1>
-    <p class="text-muted mb-0">All items you have created.</p>
+    <p class="text-muted mb-0">All items you have created or liked.</p>
 </div>
 
 <ul class="nav nav-tabs mb-4">
@@ -25,6 +25,11 @@
     <li class="nav-item">
         <button class="nav-link @(_tab == "skills" ? "active" : "")" @onclick='() => _tab = "skills"'>
             <i class="bi bi-lightning-charge me-1"></i> Skills (@_skills.Count)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link @(_tab == "liked" ? "active" : "")" @onclick='() => _tab = "liked"'>
+            <i class="bi bi-heart me-1"></i> Liked (@(_likedAgents.Count + _likedPrompts.Count + _likedSkills.Count))
         </button>
     </li>
 </ul>
@@ -54,6 +59,70 @@ else if (_tab == "skills")
                   OnTogglePublic="ToggleSkillPublic"
                   OnDelete="DeleteSkill" />
 }
+else if (_tab == "liked")
+{
+    @if (_likedAgents.Count + _likedPrompts.Count + _likedSkills.Count == 0)
+    {
+        <div class="ui-panel p-4 text-center text-muted">
+            <i class="bi bi-heart fs-3 d-block mb-2"></i>
+            You haven't liked anything yet. Browse <a href="/agents">agents</a>, <a href="/prompts">prompts</a> and <a href="/skills">skills</a>.
+        </div>
+    }
+    else
+    {
+        @if (_likedAgents.Count > 0)
+        {
+            <h6 class="text-muted mt-2 mb-2"><i class="bi bi-robot me-1"></i>Liked Agents</h6>
+            <div class="ui-panel mb-3">
+                <table class="table table-hover mb-0">
+                    <tbody>
+                        @foreach (var a in _likedAgents)
+                        {
+                            <tr>
+                                <td><strong>@a.Name</strong><br /><small class="text-muted">@(a.Description?.Length > 80 ? a.Description[..80] + "…" : a.Description)</small></td>
+                                <td class="text-end"><a href="/agents/@a.Guid" class="btn btn-sm btn-outline-primary">View</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        @if (_likedPrompts.Count > 0)
+        {
+            <h6 class="text-muted mt-2 mb-2"><i class="bi bi-chat-text me-1"></i>Liked Prompts</h6>
+            <div class="ui-panel mb-3">
+                <table class="table table-hover mb-0">
+                    <tbody>
+                        @foreach (var p in _likedPrompts)
+                        {
+                            <tr>
+                                <td><strong>@p.Name</strong><br /><small class="text-muted">@(p.Description?.Length > 80 ? p.Description[..80] + "…" : p.Description)</small></td>
+                                <td class="text-end"><a href="/prompts/@p.Guid" class="btn btn-sm btn-outline-primary">View</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        @if (_likedSkills.Count > 0)
+        {
+            <h6 class="text-muted mt-2 mb-2"><i class="bi bi-lightning-charge me-1"></i>Liked Skills</h6>
+            <div class="ui-panel mb-3">
+                <table class="table table-hover mb-0">
+                    <tbody>
+                        @foreach (var s in _likedSkills)
+                        {
+                            <tr>
+                                <td><strong>@s.Name</strong><br /><small class="text-muted">@(s.Description?.Length > 80 ? s.Description[..80] + "…" : s.Description)</small></td>
+                                <td class="text-end"><a href="/skills/@s.Guid" class="btn btn-sm btn-outline-primary">View</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
 
 @code {
     private bool _loading = true;
@@ -62,6 +131,9 @@ else if (_tab == "skills")
     private List<ApsAgent> _agents = [];
     private List<ApsPrompt> _prompts = [];
     private List<ApsSkill> _skills = [];
+    private List<ApsAgent> _likedAgents = [];
+    private List<ApsPrompt> _likedPrompts = [];
+    private List<ApsSkill> _likedSkills = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,6 +144,19 @@ else if (_tab == "skills")
         _agents  = await db.ApsAgents.Where(a => a.OwnerId == _userId).OrderByDescending(a => a.CreatedAt).ToListAsync();
         _prompts = await db.ApsPrompts.Where(p => p.OwnerId == _userId).OrderByDescending(p => p.CreatedAt).ToListAsync();
         _skills  = await db.ApsSkills.Where(s => s.OwnerId == _userId).OrderByDescending(s => s.CreatedAt).ToListAsync();
+
+        var likes = await db.ApsLikes.Where(l => l.OwnerId == _userId).ToListAsync();
+        var likedAgentIds = likes.Where(l => l.EntityType == "Agent").Select(l => l.EntityId).ToHashSet();
+        var likedPromptIds = likes.Where(l => l.EntityType == "Prompt").Select(l => l.EntityId).ToHashSet();
+        var likedSkillIds = likes.Where(l => l.EntityType == "Skill").Select(l => l.EntityId).ToHashSet();
+
+        if (likedAgentIds.Count > 0)
+            _likedAgents = await db.ApsAgents.Where(a => likedAgentIds.Contains(a.Guid)).OrderBy(a => a.Name).ToListAsync();
+        if (likedPromptIds.Count > 0)
+            _likedPrompts = await db.ApsPrompts.Where(p => likedPromptIds.Contains(p.Guid)).OrderBy(p => p.Name).ToListAsync();
+        if (likedSkillIds.Count > 0)
+            _likedSkills = await db.ApsSkills.Where(s => likedSkillIds.Contains(s.Guid)).OrderBy(s => s.Name).ToListAsync();
+
         _loading = false;
     }
 
