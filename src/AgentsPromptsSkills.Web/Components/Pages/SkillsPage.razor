@@ -18,7 +18,7 @@
 
 <div class="ui-panel ui-anim-fade-up mb-4">
     <div class="row g-2 mb-2">
-        <div class="col-md-5">
+        <div class="col-md-4">
             <input class="form-control" placeholder="Search skills..." @bind="_search" @bind:event="oninput" />
         </div>
         <div class="col-md-3">
@@ -27,6 +27,15 @@
                 <option value="ClaudeCode">Claude Code</option>
                 <option value="AgentSDK">Agent SDK</option>
                 <option value="Custom">Custom</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_sortOrder">
+                <option value="newest">Nejnovější</option>
+                <option value="oldest">Nejstarší</option>
+                <option value="likes">Nejoblíbenější</option>
+                <option value="views">Nejsledovanější</option>
+                <option value="forks">Nejvíce forknuté</option>
             </select>
         </div>
     </div>
@@ -96,6 +105,7 @@ else
     private bool _loading = true;
     private string _search = "";
     private string _typeFilter = "";
+    private string _sortOrder = "newest";
     private Guid? _tagFilter;
     private string _userId = "";
     private List<ApsSkill> _skills = [];
@@ -135,6 +145,14 @@ else
                 .Where(s => string.IsNullOrWhiteSpace(_typeFilter) || s.SkillType.ToString() == _typeFilter);
             if (_tagFilter.HasValue)
                 q = q.Where(s => _taggedEntityIds.Contains(s.Guid));
+            q = _sortOrder switch
+            {
+                "oldest" => q.OrderBy(s => s.CreatedAt),
+                "likes"  => q.OrderByDescending(s => s.LikeCount),
+                "views"  => q.OrderByDescending(s => s.ViewCount),
+                "forks"  => q.OrderByDescending(s => s.ForkCount),
+                _        => q.OrderByDescending(s => s.CreatedAt),
+            };
             return q;
         }
     }

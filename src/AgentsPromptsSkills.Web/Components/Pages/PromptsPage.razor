@@ -18,10 +18,10 @@
 
 <div class="ui-panel ui-anim-fade-up mb-4">
     <div class="row g-2 mb-2">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input class="form-control" placeholder="Search prompts..." @bind="_search" @bind:event="oninput" />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select class="form-select" @bind="_typeFilter">
                 <option value="">All types</option>
                 <option value="General">General</option>
@@ -37,6 +37,15 @@
                 {
                     <option value="@cat">@cat</option>
                 }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_sortOrder">
+                <option value="newest">Nejnovější</option>
+                <option value="oldest">Nejstarší</option>
+                <option value="likes">Nejoblíbenější</option>
+                <option value="views">Nejsledovanější</option>
+                <option value="forks">Nejvíce forknuté</option>
             </select>
         </div>
     </div>
@@ -119,6 +128,7 @@ else
     private string _search = "";
     private string _typeFilter = "";
     private string _categoryFilter = "";
+    private string _sortOrder = "newest";
     private Guid? _tagFilter;
     private string _userId = "";
     private List<ApsPrompt> _prompts = [];
@@ -175,6 +185,15 @@ else
 
             if (_tagFilter.HasValue)
                 q = q.Where(p => _taggedEntityIds.Contains(p.Guid));
+
+            q = _sortOrder switch
+            {
+                "oldest" => q.OrderBy(p => p.CreatedAt),
+                "likes"  => q.OrderByDescending(p => p.LikeCount),
+                "views"  => q.OrderByDescending(p => p.ViewCount),
+                "forks"  => q.OrderByDescending(p => p.ForkCount),
+                _        => q.OrderByDescending(p => p.CreatedAt),
+            };
 
             return q;
         }

@@ -18,7 +18,7 @@
 
 <div class="ui-panel ui-anim-fade-up mb-4">
     <div class="row g-2 mb-2">
-        <div class="col-md-5">
+        <div class="col-md-4">
             <input class="form-control" placeholder="Search agents..." @bind="_search" @bind:event="oninput" />
         </div>
         <div class="col-md-3">
@@ -28,6 +28,16 @@
                 {
                     <option value="@cat">@cat</option>
                 }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="_sortOrder">
+                <option value="newest">Nejnovější</option>
+                <option value="oldest">Nejstarší</option>
+                <option value="likes">Nejoblíbenější</option>
+                <option value="views">Nejsledovanější</option>
+                <option value="usage">Nejvíce použité</option>
+                <option value="forks">Nejvíce forknuté</option>
             </select>
         </div>
     </div>
@@ -109,6 +119,7 @@ else
     private bool _loading = true;
     private string _search = "";
     private string _categoryFilter = "";
+    private string _sortOrder = "newest";
     private Guid? _tagFilter;
     private string _userId = "";
     private List<ApsAgent> _agents = [];
@@ -156,6 +167,15 @@ else
                 .Where(a => string.IsNullOrWhiteSpace(_categoryFilter) || a.CategoryName == _categoryFilter);
             if (_tagFilter.HasValue)
                 q = q.Where(a => _taggedEntityIds.Contains(a.Guid));
+            q = _sortOrder switch
+            {
+                "oldest" => q.OrderBy(a => a.CreatedAt),
+                "likes"  => q.OrderByDescending(a => a.LikeCount),
+                "views"  => q.OrderByDescending(a => a.ViewCount),
+                "usage"  => q.OrderByDescending(a => a.UsageCount),
+                "forks"  => q.OrderByDescending(a => a.ForkCount),
+                _        => q.OrderByDescending(a => a.CreatedAt),
+            };
             return q;
         }
     }
