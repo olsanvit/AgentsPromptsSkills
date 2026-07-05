@@ -1,0 +1,219 @@
+@page "/skills/{Id:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<PageTitle>@(_skill?.Name ?? "Skill") — AgentsPromptsSkills</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a href="/skills" class="btn btn-outline-secondary btn-sm">← Back to skills</a>
+    @if (_skill != null)
+    {
+        <span class="badge @(_skill.IsPublic ? "bg-success" : "bg-secondary")">
+            @(_skill.IsPublic ? "Public" : "Private")
+        </span>
+        <span class="badge bg-warning text-dark">@_skill.SkillType</span>
+    }
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else if (_skill == null)
+{
+    <div class="alert alert-danger">Skill not found or access denied.</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="ui-panel mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h4 mb-1">
+                            @if (!string.IsNullOrEmpty(_skill.Emoji)) { <span class="me-2">@_skill.Emoji</span> }
+                            @_skill.Name
+                        </h2>
+                        @if (!string.IsNullOrEmpty(_skill.Description))
+                        {
+                            <p class="text-muted mb-0">@_skill.Description</p>
+                        }
+                    </div>
+                    @if (_isOwner)
+                    {
+                        <a href="/create/skill?edit=@_skill.Guid" class="btn btn-outline-primary btn-sm">Edit</a>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    @if (!string.IsNullOrEmpty(_skill.CategoryName))
+                    {
+                        <span class="badge bg-info text-dark"><i class="bi bi-folder me-1"></i>@_skill.CategoryName</span>
+                    }
+                    <span class="badge bg-warning text-dark"><i class="bi bi-lightning-charge me-1"></i>@_skill.SkillType</span>
+                    @foreach (var tag in _skill.Tags)
+                    {
+                        <span class="badge bg-light text-dark border"># @tag.Tag.Name</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Skill content -->
+            <div class="ui-panel mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Skill Content</h5>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => _raw = !_raw">
+                            @(_raw ? "Rendered" : "Raw")
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="CopyContent">
+                            <i class="bi bi-clipboard me-1"></i>Copy
+                        </button>
+                    </div>
+                </div>
+                @if (_raw)
+                {
+                    <pre class="p-3 rounded border bg-body-tertiary small mb-0" style="white-space:pre-wrap;max-height:600px;overflow-y:auto;">@_skill.Content</pre>
+                }
+                else
+                {
+                    <div class="p-3 border rounded" style="max-height:600px;overflow-y:auto;">
+                        <pre style="white-space:pre-wrap;font-family:inherit;">@_skill.Content</pre>
+                    </div>
+                }
+                @if (_copied) { <div class="text-success small mt-1">✓ Copied!</div> }
+            </div>
+
+            <!-- Usage example -->
+            @if (_skill.SkillType == ApsSkillType.ClaudeCode)
+            {
+                <div class="ui-panel">
+                    <h5 class="mb-2"><i class="bi bi-terminal me-2"></i>How to use in Claude Code</h5>
+                    <p class="small text-muted mb-2">Save as a <code>.md</code> file in your <code>.claude/skills/</code> directory and invoke with:</p>
+                    <pre class="p-2 rounded bg-body-tertiary small mb-0">/@_skill.Name.ToLower().Replace(" ", "-")</pre>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-4">
+            <div class="ui-panel mb-3">
+                <h6 class="mb-3">Stats</h6>
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="small text-muted">Likes</div>
+                        <div class="fw-bold">@_skill.LikeCount</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Views</div>
+                        <div class="fw-bold">@_skill.ViewCount</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Forks</div>
+                        <div class="fw-bold">@_skill.ForkCount</div>
+                    </div>
+                </div>
+                <hr />
+                @if (_userId != "")
+                {
+                    <button class="btn @(_hasLiked ? "btn-danger" : "btn-outline-danger") btn-sm w-100" @onclick="ToggleLikeAsync">
+                        <i class="bi bi-heart@(_hasLiked ? "-fill" : "") me-1"></i>
+                        @(_hasLiked ? "Unlike" : "Like")
+                    </button>
+                }
+            </div>
+
+            <div class="ui-panel">
+                <h6 class="mb-2">Info</h6>
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Runtime</span>
+                        <span>@_skill.SkillType</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Author</span>
+                        <span>@_skill.OwnerName</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Created</span>
+                        <span>@_skill.CreatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Updated</span>
+                        <span>@_skill.UpdatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool _loading = true;
+    private ApsSkill? _skill;
+    private string _userId = "";
+    private bool _isOwner;
+    private bool _hasLiked;
+    private bool _copied;
+    private bool _raw = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _skill = await db.ApsSkills
+            .Include(s => s.Tags).ThenInclude(t => t.Tag)
+            .FirstOrDefaultAsync(s => s.Guid == Id && !s.IsDeleted && (s.IsPublic || s.OwnerId == _userId));
+
+        if (_skill != null)
+        {
+            _isOwner = _skill.OwnerId == _userId;
+            if (_userId != "")
+            {
+                _hasLiked = await db.ApsLikes
+                    .AnyAsync(l => l.EntityId == Id && l.EntityType == "Skill" && l.OwnerId == _userId);
+            }
+            await db.ApsSkills
+                .Where(s => s.Guid == Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(s => s.ViewCount, s => s.ViewCount + 1));
+            _skill.ViewCount++;
+        }
+
+        _loading = false;
+    }
+
+    private async Task ToggleLikeAsync()
+    {
+        if (_userId == "" || _skill == null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await db.ApsLikes
+            .FirstOrDefaultAsync(l => l.EntityId == Id && l.EntityType == "Skill" && l.OwnerId == _userId);
+        if (existing != null)
+        {
+            db.ApsLikes.Remove(existing);
+            _hasLiked = false;
+        }
+        else
+        {
+            db.ApsLikes.Add(new ApsLike { EntityId = Id, EntityType = "Skill", OwnerId = _userId });
+            _hasLiked = true;
+        }
+        await db.SaveChangesAsync();
+        var delta = _hasLiked ? 1 : -1;
+        await db.ApsSkills.Where(s => s.Guid == Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(s => s.LikeCount, s => s.LikeCount + delta));
+        _skill.LikeCount = Math.Max(0, _skill.LikeCount + delta);
+    }
+
+    private async Task CopyContent()
+    {
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+    }
+}

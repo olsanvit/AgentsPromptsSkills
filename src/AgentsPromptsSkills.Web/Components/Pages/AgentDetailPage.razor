@@ -1,0 +1,287 @@
+@page "/agents/{Id:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<PageTitle>@(_agent?.Name ?? "Agent") — AgentsPromptsSkills</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a href="/agents" class="btn btn-outline-secondary btn-sm">← Back to agents</a>
+    @if (_agent != null)
+    {
+        <span class="badge @(_agent.IsPublic ? "bg-success" : "bg-secondary")">
+            @(_agent.IsPublic ? "Public" : "Private")
+        </span>
+        <span class="badge @(_agent.IsActive ? "bg-primary" : "bg-warning text-dark")">
+            @(_agent.IsActive ? "Active" : "Inactive")
+        </span>
+    }
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else if (_agent == null)
+{
+    <div class="alert alert-danger">Agent not found or access denied.</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="ui-panel mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h4 mb-1">
+                            @if (!string.IsNullOrEmpty(_agent.Emoji)) { <span class="me-2">@_agent.Emoji</span> }
+                            @_agent.Name
+                        </h2>
+                        @if (!string.IsNullOrEmpty(_agent.Description))
+                        {
+                            <p class="text-muted mb-0">@_agent.Description</p>
+                        }
+                    </div>
+                    @if (_isOwner)
+                    {
+                        <a href="/create/agent?edit=@_agent.Guid" class="btn btn-outline-primary btn-sm">Edit</a>
+                    }
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    @if (!string.IsNullOrEmpty(_agent.CategoryName))
+                    {
+                        <span class="badge bg-info text-dark"><i class="bi bi-folder me-1"></i>@_agent.CategoryName</span>
+                    }
+                    <span class="badge bg-secondary"><i class="bi bi-cpu me-1"></i>@_agent.ModelName</span>
+                    @foreach (var tag in _agent.Tags)
+                    {
+                        <span class="badge bg-light text-dark border"># @tag.Tag.Name</span>
+                    }
+                </div>
+            </div>
+
+            <!-- System prompt -->
+            <div class="ui-panel mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="bi bi-code-square me-2"></i>System Prompt</h5>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CopyPrompt">
+                        <i class="bi bi-clipboard me-1"></i>Copy
+                    </button>
+                </div>
+                <pre class="p-3 rounded border bg-body-tertiary small mb-0" style="white-space:pre-wrap;max-height:500px;overflow-y:auto;">@_agent.SystemPrompt</pre>
+                @if (_copied) { <div class="text-success small mt-1">✓ Copied to clipboard!</div> }
+            </div>
+
+            <!-- Comments section -->
+            <div class="ui-panel">
+                <h5 class="mb-3"><i class="bi bi-chat me-2"></i>Comments (@_comments.Count)</h5>
+                @if (!_comments.Any())
+                {
+                    <p class="text-muted small">No comments yet.</p>
+                }
+                else
+                {
+                    @foreach (var c in _comments.Where(c => !c.IsDeleted).OrderByDescending(c => c.PostedAt))
+                    {
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between">
+                                <strong class="small">@c.OwnerName</strong>
+                                <span class="text-muted small">@c.PostedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                            <p class="small mb-0">@c.Content</p>
+                        </div>
+                    }
+                }
+
+                @if (_userId != "")
+                {
+                    <div class="mt-3">
+                        <textarea class="form-control form-control-sm mb-2" rows="2"
+                                  placeholder="Add a comment..."
+                                  @bind="_newComment" maxlength="2000"></textarea>
+                        <button class="btn btn-primary btn-sm" @onclick="PostCommentAsync"
+                                disabled="@string.IsNullOrWhiteSpace(_newComment)">
+                            Post comment
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Stats -->
+            <div class="ui-panel mb-3">
+                <h6 class="mb-3">Stats</h6>
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="small text-muted">Likes</div>
+                        <div class="fw-bold">@_agent.LikeCount</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Views</div>
+                        <div class="fw-bold">@_agent.ViewCount</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Uses</div>
+                        <div class="fw-bold">@_agent.UsageCount</div>
+                    </div>
+                </div>
+                <hr />
+                <div class="d-grid gap-2">
+                    @if (_userId != "")
+                    {
+                        <button class="btn @(_hasLiked ? "btn-danger" : "btn-outline-danger") btn-sm" @onclick="ToggleLikeAsync">
+                            <i class="bi bi-heart@(_hasLiked ? "-fill" : "") me-1"></i>
+                            @(_hasLiked ? "Unlike" : "Like")
+                        </button>
+                    }
+                    <a href="/playground?agent=@_agent.Guid" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-play-circle me-1"></i>Try in Playground
+                    </a>
+                </div>
+            </div>
+
+            <!-- Meta -->
+            <div class="ui-panel">
+                <h6 class="mb-2">Info</h6>
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Author</span>
+                        <span>@_agent.OwnerName</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Created</span>
+                        <span>@_agent.CreatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Updated</span>
+                        <span>@_agent.UpdatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                    @if (_agent.ForkCount > 0)
+                    {
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Forks</span>
+                            <span>@_agent.ForkCount</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_msg != null)
+{
+    <div class="alert @(_isErr ? "alert-danger" : "alert-success") mt-3">@_msg</div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool _loading = true;
+    private ApsAgent? _agent;
+    private List<ApsComment> _comments = [];
+    private string _userId = "";
+    private bool _isOwner;
+    private bool _hasLiked;
+    private bool _copied;
+    private string _newComment = "";
+    private string? _msg;
+    private bool _isErr;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _agent = await db.ApsAgents
+            .Include(a => a.Tags).ThenInclude(t => t.Tag)
+            .FirstOrDefaultAsync(a => a.Guid == Id && !a.IsDeleted && (a.IsPublic || a.OwnerId == _userId));
+
+        if (_agent != null)
+        {
+            _isOwner = _agent.OwnerId == _userId;
+
+            _comments = await db.ApsComments
+                .Where(c => c.EntityId == Id && c.EntityType == "Agent")
+                .OrderByDescending(c => c.PostedAt)
+                .ToListAsync();
+
+            if (_userId != "")
+            {
+                _hasLiked = await db.ApsLikes
+                    .AnyAsync(l => l.EntityId == Id && l.EntityType == "Agent" && l.OwnerId == _userId);
+            }
+
+            // Increment view count
+            await db.ApsAgents
+                .Where(a => a.Guid == Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.ViewCount, a => a.ViewCount + 1));
+            _agent.ViewCount++;
+        }
+
+        _loading = false;
+    }
+
+    private async Task ToggleLikeAsync()
+    {
+        if (_userId == "" || _agent == null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await db.ApsLikes
+            .FirstOrDefaultAsync(l => l.EntityId == Id && l.EntityType == "Agent" && l.OwnerId == _userId);
+        if (existing != null)
+        {
+            db.ApsLikes.Remove(existing);
+            _hasLiked = false;
+        }
+        else
+        {
+            db.ApsLikes.Add(new ApsLike { EntityId = Id, EntityType = "Agent", OwnerId = _userId });
+            _hasLiked = true;
+        }
+        await db.SaveChangesAsync();
+        var delta = _hasLiked ? 1 : -1;
+        await db.ApsAgents.Where(a => a.Guid == Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.LikeCount, a => a.LikeCount + delta));
+        _agent.LikeCount = Math.Max(0, _agent.LikeCount + delta);
+    }
+
+    private async Task PostCommentAsync()
+    {
+        if (_userId == "" || _agent == null || string.IsNullOrWhiteSpace(_newComment)) return;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var ownerName = authState.User.Identity?.Name ?? "User";
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.ApsComments.Add(new ApsComment
+        {
+            EntityId = Id,
+            EntityType = "Agent",
+            OwnerId = _userId,
+            OwnerName = ownerName,
+            Content = _newComment.Trim(),
+            PostedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+        _comments = await db.ApsComments
+            .Where(c => c.EntityId == Id && c.EntityType == "Agent")
+            .OrderByDescending(c => c.PostedAt)
+            .ToListAsync();
+        _newComment = "";
+        _msg = "Comment posted.";
+        _isErr = false;
+    }
+
+    private async Task CopyPrompt()
+    {
+        if (_agent == null) return;
+        await Task.CompletedTask;
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+    }
+}

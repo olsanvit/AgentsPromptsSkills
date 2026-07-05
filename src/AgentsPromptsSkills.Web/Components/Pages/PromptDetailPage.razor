@@ -1,0 +1,256 @@
+@page "/prompts/{Id:guid}"
+@rendermode InteractiveServer
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@using System.Text.Json
+
+<PageTitle>@(_prompt?.Name ?? "Prompt") — AgentsPromptsSkills</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <a href="/prompts" class="btn btn-outline-secondary btn-sm">← Back to prompts</a>
+    @if (_prompt != null)
+    {
+        <span class="badge @(_prompt.IsPublic ? "bg-success" : "bg-secondary")">
+            @(_prompt.IsPublic ? "Public" : "Private")
+        </span>
+        <span class="badge bg-info text-dark">@_prompt.PromptType</span>
+    }
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else if (_prompt == null)
+{
+    <div class="alert alert-danger">Prompt not found or access denied.</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="ui-panel mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="h4 mb-1">
+                            @if (!string.IsNullOrEmpty(_prompt.Emoji)) { <span class="me-2">@_prompt.Emoji</span> }
+                            @_prompt.Name
+                        </h2>
+                        @if (!string.IsNullOrEmpty(_prompt.Description))
+                        {
+                            <p class="text-muted mb-0">@_prompt.Description</p>
+                        }
+                    </div>
+                    @if (_isOwner)
+                    {
+                        <a href="/create/prompt?edit=@_prompt.Guid" class="btn btn-outline-primary btn-sm">Edit</a>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    @if (!string.IsNullOrEmpty(_prompt.CategoryName))
+                    {
+                        <span class="badge bg-info text-dark"><i class="bi bi-folder me-1"></i>@_prompt.CategoryName</span>
+                    }
+                    @foreach (var tag in _prompt.Tags)
+                    {
+                        <span class="badge bg-light text-dark border"># @tag.Tag.Name</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Variables -->
+            @if (!string.IsNullOrEmpty(_prompt.VariablesJson) && _prompt.VariablesJson != "[]")
+            {
+                <div class="ui-panel mb-4">
+                    <h5 class="mb-3"><i class="bi bi-braces me-2"></i>Variables</h5>
+                    @try
+                    {
+                        var vars = JsonSerializer.Deserialize<List<PromptVariable>>(_prompt.VariablesJson, _jsonOpts);
+                        @if (vars != null && vars.Any())
+                        {
+                            <div class="row g-2">
+                                @foreach (var v in vars)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="card card-body py-2 px-3 border">
+                                            <div class="fw-bold small"><code>{{@v.Name}}</code></div>
+                                            @if (!string.IsNullOrEmpty(v.Description))
+                                            {
+                                                <div class="text-muted small">@v.Description</div>
+                                            }
+                                            <input class="form-control form-control-sm mt-1" placeholder="Enter value..."
+                                                   @bind="_varValues[v.Name]" />
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm mt-2" @onclick="FillVariables">
+                                Preview with values
+                            </button>
+                        }
+                    }
+                    catch { }
+                </div>
+            }
+
+            <!-- Prompt content -->
+            <div class="ui-panel mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="bi bi-chat-text me-2"></i>Prompt Content</h5>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CopyContent">
+                        <i class="bi bi-clipboard me-1"></i>Copy
+                    </button>
+                </div>
+                <pre class="p-3 rounded border bg-body-tertiary small mb-0" style="white-space:pre-wrap;max-height:500px;overflow-y:auto;">@(_preview ?? _prompt.Content)</pre>
+                @if (_copied) { <div class="text-success small mt-1">✓ Copied!</div> }
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="ui-panel mb-3">
+                <h6 class="mb-3">Stats</h6>
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="small text-muted">Likes</div>
+                        <div class="fw-bold">@_prompt.LikeCount</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Views</div>
+                        <div class="fw-bold">@_prompt.ViewCount</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="small text-muted">Forks</div>
+                        <div class="fw-bold">@_prompt.ForkCount</div>
+                    </div>
+                </div>
+                <hr />
+                @if (_userId != "")
+                {
+                    <button class="btn @(_hasLiked ? "btn-danger" : "btn-outline-danger") btn-sm w-100" @onclick="ToggleLikeAsync">
+                        <i class="bi bi-heart@(_hasLiked ? "-fill" : "") me-1"></i>
+                        @(_hasLiked ? "Unlike" : "Like")
+                    </button>
+                }
+            </div>
+
+            <div class="ui-panel">
+                <h6 class="mb-2">Info</h6>
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Type</span>
+                        <span>@_prompt.PromptType</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Author</span>
+                        <span>@_prompt.OwnerName</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Created</span>
+                        <span>@_prompt.CreatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Updated</span>
+                        <span>@_prompt.UpdatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool _loading = true;
+    private ApsPrompt? _prompt;
+    private string _userId = "";
+    private bool _isOwner;
+    private bool _hasLiked;
+    private bool _copied;
+    private string? _preview;
+    private Dictionary<string, string> _varValues = new();
+    private static readonly JsonSerializerOptions _jsonOpts = new() { PropertyNameCaseInsensitive = true };
+
+    private record PromptVariable(string Name, string Description = "");
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _prompt = await db.ApsPrompts
+            .Include(p => p.Tags).ThenInclude(t => t.Tag)
+            .FirstOrDefaultAsync(p => p.Guid == Id && !p.IsDeleted && (p.IsPublic || p.OwnerId == _userId));
+
+        if (_prompt != null)
+        {
+            _isOwner = _prompt.OwnerId == _userId;
+            if (_userId != "")
+            {
+                _hasLiked = await db.ApsLikes
+                    .AnyAsync(l => l.EntityId == Id && l.EntityType == "Prompt" && l.OwnerId == _userId);
+            }
+            await db.ApsPrompts
+                .Where(p => p.Guid == Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.ViewCount, p => p.ViewCount + 1));
+            _prompt.ViewCount++;
+
+            // Pre-populate variable map
+            if (!string.IsNullOrEmpty(_prompt.VariablesJson) && _prompt.VariablesJson != "[]")
+            {
+                try
+                {
+                    var vars = JsonSerializer.Deserialize<List<PromptVariable>>(_prompt.VariablesJson, _jsonOpts);
+                    if (vars != null)
+                        _varValues = vars.ToDictionary(v => v.Name, _ => "");
+                }
+                catch { }
+            }
+        }
+
+        _loading = false;
+    }
+
+    private void FillVariables()
+    {
+        if (_prompt == null) return;
+        var result = _prompt.Content;
+        foreach (var kv in _varValues)
+            if (!string.IsNullOrEmpty(kv.Value))
+                result = result.Replace($"{{{{{kv.Key}}}}}", kv.Value);
+        _preview = result;
+    }
+
+    private async Task ToggleLikeAsync()
+    {
+        if (_userId == "" || _prompt == null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var existing = await db.ApsLikes
+            .FirstOrDefaultAsync(l => l.EntityId == Id && l.EntityType == "Prompt" && l.OwnerId == _userId);
+        if (existing != null)
+        {
+            db.ApsLikes.Remove(existing);
+            _hasLiked = false;
+        }
+        else
+        {
+            db.ApsLikes.Add(new ApsLike { EntityId = Id, EntityType = "Prompt", OwnerId = _userId });
+            _hasLiked = true;
+        }
+        await db.SaveChangesAsync();
+        var delta = _hasLiked ? 1 : -1;
+        await db.ApsPrompts.Where(p => p.Guid == Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.LikeCount, p => p.LikeCount + delta));
+        _prompt.LikeCount = Math.Max(0, _prompt.LikeCount + delta);
+    }
+
+    private async Task CopyContent()
+    {
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _copied = false;
+    }
+}

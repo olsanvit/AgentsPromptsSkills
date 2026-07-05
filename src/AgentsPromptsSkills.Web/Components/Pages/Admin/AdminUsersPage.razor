@@ -1,0 +1,180 @@
+@page "/admin/users"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using MercenariesAndBeasts.Infrastructure
+@using Microsoft.AspNetCore.Identity
+@inject IDbContextFactory<AppDbContextAps> DbFactory
+@inject UserManager<AppUser> UserManager
+
+<PageTitle>Users — Admin</PageTitle>
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a href="/admin" class="btn btn-outline-secondary btn-sm">← Admin</a>
+    <h2 class="h4 mb-0"><i class="bi bi-people me-2"></i>Users</h2>
+</div>
+
+@if (_loading)
+{
+    <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
+}
+else
+{
+    <div class="ui-panel mb-3">
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <input class="form-control form-control-sm" placeholder="Search by name or email..."
+                       @bind="_search" @bind:event="oninput" />
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">@Filtered.Count() / @_users.Count users</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>Roles</th>
+                        <th>Email confirmed</th>
+                        <th>Agents</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Filtered)
+                    {
+                        <tr>
+                            <td>
+                                <strong class="small">@u.Email</strong>
+                                @if (u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow)
+                                {
+                                    <span class="badge bg-danger ms-1 small">Locked</span>
+                                }
+                            </td>
+                            <td class="small text-muted">@(u.UserName ?? "—")</td>
+                            <td>
+                                @foreach (var role in _userRoles.GetValueOrDefault(u.Id, []))
+                                {
+                                    <span class="badge bg-primary me-1">@role</span>
+                                }
+                            </td>
+                            <td>
+                                @if (u.EmailConfirmed)
+                                { <span class="badge bg-success">Yes</span> }
+                                else
+                                { <span class="badge bg-warning text-dark">No</span> }
+                            </td>
+                            <td class="small text-muted">@_agentCounts.GetValueOrDefault(u.Id, 0)</td>
+                            <td>
+                                @if (!_userRoles.GetValueOrDefault(u.Id, []).Contains("Admin"))
+                                {
+                                    <button class="btn btn-outline-primary btn-sm me-1"
+                                            @onclick="() => ToggleAdminAsync(u)">
+                                        Make Admin
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-warning btn-sm me-1"
+                                            @onclick="() => ToggleAdminAsync(u)">
+                                        Remove Admin
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Filtered.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-3">No users found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (_msg != null)
+{
+    <div class="alert @(_isErr ? "alert-danger" : "alert-success") mt-3">@_msg</div>
+}
+
+@code {
+    private bool _loading = true;
+    private List<AppUser> _users = [];
+    private Dictionary<string, List<string>> _userRoles = new();
+    private Dictionary<string, int> _agentCounts = new();
+    private string _search = "";
+    private string? _msg;
+    private bool _isErr;
+
+    private IEnumerable<AppUser> Filtered => _users.Where(u =>
+        string.IsNullOrEmpty(_search) ||
+        (u.Email?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true) ||
+        (u.UserName?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _loading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        _users = UserManager.Users.OrderBy(u => u.Email).ToList();
+
+        _userRoles = new();
+        foreach (var user in _users)
+        {
+            var roles = await UserManager.GetRolesAsync(user);
+            _userRoles[user.Id] = roles.ToList();
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var userIds = _users.Select(u => u.Id).ToList();
+        _agentCounts = await db.ApsAgents
+            .Where(a => userIds.Contains(a.OwnerId))
+            .GroupBy(a => a.OwnerId)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Count);
+    }
+
+    private async Task ToggleAdminAsync(AppUser user)
+    {
+        var isAdmin = _userRoles.GetValueOrDefault(user.Id, []).Contains("Admin");
+        if (isAdmin)
+        {
+            var result = await UserManager.RemoveFromRoleAsync(user, "Admin");
+            if (result.Succeeded)
+            {
+                _msg = $"{user.Email} is no longer Admin.";
+                _isErr = false;
+            }
+            else
+            {
+                _msg = string.Join(", ", result.Errors.Select(e => e.Description));
+                _isErr = true;
+            }
+        }
+        else
+        {
+            var roleExists = await UserManager.IsInRoleAsync(user, "Admin");
+            if (!roleExists)
+            {
+                var result = await UserManager.AddToRoleAsync(user, "Admin");
+                if (result.Succeeded)
+                {
+                    _msg = $"{user.Email} is now Admin.";
+                    _isErr = false;
+                }
+                else
+                {
+                    _msg = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _isErr = true;
+                }
+            }
+        }
+        await LoadAsync();
+    }
+}
