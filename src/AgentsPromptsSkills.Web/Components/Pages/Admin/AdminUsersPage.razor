@@ -122,7 +122,7 @@ else
 
     private async Task LoadAsync()
     {
-        _users = UserManager.Users.OrderBy(u => u.Email).ToList();
+        _users = await UserManager.Users.OrderBy(u => u.Email).ToListAsync();
 
         _userRoles = new();
         foreach (var user in _users)

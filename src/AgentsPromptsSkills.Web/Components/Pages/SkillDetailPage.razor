@@ -3,6 +3,7 @@
 @inject IDbContextFactory<AppDbContextAps> DbFactory
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>@(_skill?.Name ?? "Skill") — AgentsPromptsSkills</PageTitle>
 
@@ -211,6 +212,7 @@ else
 
     private async Task CopyContent()
     {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _skill?.Content ?? "");
         _copied = true;
         StateHasChanged();
         await Task.Delay(2000);

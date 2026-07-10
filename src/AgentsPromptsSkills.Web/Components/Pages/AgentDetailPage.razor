@@ -3,6 +3,7 @@
 @inject IDbContextFactory<AppDbContextAps> DbFactory
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>@(_agent?.Name ?? "Agent") — AgentsPromptsSkills</PageTitle>
 
@@ -278,7 +279,7 @@ else
     private async Task CopyPrompt()
     {
         if (_agent == null) return;
-        await Task.CompletedTask;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _agent.SystemPrompt ?? "");
         _copied = true;
         StateHasChanged();
         await Task.Delay(2000);
