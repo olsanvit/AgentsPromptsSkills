@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AgentsPromptsSkills.Tests;
 
@@ -12,8 +14,27 @@ public class IntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         _client = factory.WithWebHostBuilder(builder =>
         {
-            builder.UseSetting("ConnectionStrings:ApsDatabase", "Host=localhost;Port=54321;Database=ci_test_db");
+            builder.UseSetting("ConnectionStrings:ApsDatabase",
+                Environment.GetEnvironmentVariable("ConnectionStrings__ApsDatabase")
+                ?? "Host=localhost;Port=54321;Database=ci_test_db;Username=postgres;Password=postgres");
             builder.UseSetting("Anthropic:ApiKey", "sk-test");
+
+            builder.ConfigureServices(services =>
+            {
+                // Replace Npgsql DbContext with InMemory for tests
+                var factory2 = services.SingleOrDefault(d => d.ServiceType == typeof(IDbContextFactory<AppDbContextAps>));
+                if (factory2 != null) services.Remove(factory2);
+                var ctx = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContextAps>));
+                if (ctx != null) services.Remove(ctx);
+                // Remove all AppDbContextAps descriptors
+                var toRemove = services.Where(d => d.ServiceType == typeof(AppDbContextAps)).ToList();
+                foreach (var d in toRemove) services.Remove(d);
+
+                services.AddDbContextFactory<AppDbContextAps>(options =>
+                    options.UseInMemoryDatabase("aps-test"));
+                services.AddDbContext<AppDbContextAps>(options =>
+                    options.UseInMemoryDatabase("aps-test"));
+            });
         }).CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
