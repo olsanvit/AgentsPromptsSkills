@@ -29,6 +29,7 @@ public sealed class ApsPlaygroundService
     /// <summary>
     /// Calls the Anthropic Claude API and saves the session.
     /// </summary>
+    // AUDIT:PENDING|Střední|MaxTokens 4096 hardcoded; bez rate limiting; bez retry
     public async Task<ApsPlaygroundResult> RunAsync(
         string  systemPrompt,
         string  userMessage,

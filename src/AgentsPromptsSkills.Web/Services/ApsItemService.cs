@@ -16,6 +16,7 @@ public sealed class ApsItemService
         _dbFactory = dbFactory;
     }
 
+    // AUDIT:OK
     public async Task<List<ApsAgent>> GetPublicAgentsAsync(CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
@@ -25,6 +26,7 @@ public sealed class ApsItemService
             .ToListAsync(ct);
     }
 
+    // AUDIT:OK
     public async Task<List<ApsPrompt>> GetPublicPromptsAsync(CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
@@ -34,6 +36,7 @@ public sealed class ApsItemService
             .ToListAsync(ct);
     }
 
+    // AUDIT:OK
     public async Task<List<ApsSkill>> GetPublicSkillsAsync(CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
@@ -43,6 +46,7 @@ public sealed class ApsItemService
             .ToListAsync(ct);
     }
 
+    // AUDIT:PENDING|Nízký|entityType parametr string místo enum – chybné hodnoty nespadnou
     public async Task IncrementLikesAsync(string entityType, Guid id, CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
