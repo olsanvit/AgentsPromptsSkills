@@ -73,9 +73,9 @@ var apsDataSource = apsDsb.Build();
 builder.Services.AddDbContextFactory<AppDbContextAps>(options =>
     options.UseNpgsql(apsDataSource, o => o.CommandTimeout(120)));
 
-builder.Services.AddDbContext<AppDbContextAps>(options =>
-    options.UseNpgsql(apsDataSource, o => o.CommandTimeout(120)),
-    ServiceLifetime.Scoped);
+// AppDbContextAps jako scoped service přes factory (nevytváří duplicitní IDbContextOptionsConfiguration)
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IDbContextFactory<AppDbContextAps>>().CreateDbContext());
 
 // ── Auth (Identity + optional Google OAuth) ─────────────────────────────────
 builder.Services.AddMabAuth<AppDbContextAps>(builder.Configuration);
