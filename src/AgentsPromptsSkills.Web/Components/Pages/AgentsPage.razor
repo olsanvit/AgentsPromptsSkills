@@ -1,4 +1,4 @@
-@* AUDIT:PENDING|Nízký|Soft-deleted záznamy se zobrazují – chybí IsDeleted filter *@
+@* AUDIT:FIXED|byl: chyběl IsActive filter; soft-inactive záznamy se zobrazovaly *@
 @page "/agents"
 @rendermode InteractiveServer
 @inject IDbContextFactory<AppDbContextAps> DbFactory
@@ -136,7 +136,7 @@ else
 
         await using var db = await DbFactory.CreateDbContextAsync();
         _agents = await db.ApsAgents
-            .Where(a => a.IsPublic || a.OwnerId == _userId)
+            .Where(a => a.IsActive && (a.IsPublic || a.OwnerId == _userId))
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
 

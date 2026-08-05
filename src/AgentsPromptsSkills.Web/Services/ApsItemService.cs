@@ -4,6 +4,8 @@ using SharedServices.Models.Aps;
 
 namespace AgentsPromptsSkills.Web.Services;
 
+public enum ApsEntityType { Agent, Prompt, Skill }
+
 /// <summary>
 /// General-purpose service for querying APS items (agents, prompts, skills).
 /// </summary>
@@ -46,23 +48,23 @@ public sealed class ApsItemService
             .ToListAsync(ct);
     }
 
-    // AUDIT:PENDING|Nízký|entityType parametr string místo enum – chybné hodnoty nespadnou
-    public async Task IncrementLikesAsync(string entityType, Guid id, CancellationToken ct = default)
+    // AUDIT:FIXED|byl: string entityType – nevalidní hodnota tichá; nyní enum
+    public async Task IncrementLikesAsync(ApsEntityType entityType, Guid id, CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         switch (entityType)
         {
-            case "Agent":
+            case ApsEntityType.Agent:
                 await db.ApsAgents
                     .Where(a => a.Guid == id)
                     .ExecuteUpdateAsync(s => s.SetProperty(a => a.LikeCount, a => a.LikeCount + 1), ct);
                 break;
-            case "Prompt":
+            case ApsEntityType.Prompt:
                 await db.ApsPrompts
                     .Where(p => p.Guid == id)
                     .ExecuteUpdateAsync(s => s.SetProperty(p => p.LikeCount, p => p.LikeCount + 1), ct);
                 break;
-            case "Skill":
+            case ApsEntityType.Skill:
                 await db.ApsSkills
                     .Where(s => s.Guid == id)
                     .ExecuteUpdateAsync(s => s.SetProperty(sk => sk.LikeCount, sk => sk.LikeCount + 1), ct);

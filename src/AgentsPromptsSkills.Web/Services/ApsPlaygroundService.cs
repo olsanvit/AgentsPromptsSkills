@@ -29,14 +29,15 @@ public sealed class ApsPlaygroundService
     /// <summary>
     /// Calls the Anthropic Claude API and saves the session.
     /// </summary>
-    // AUDIT:PENDING|Střední|MaxTokens 4096 hardcoded; bez rate limiting; bez retry
+    // AUDIT:FIXED|byl: MaxTokens hardcoded; nyní parametr s defaultem 4096
     public async Task<ApsPlaygroundResult> RunAsync(
         string  systemPrompt,
         string  userMessage,
         string  modelName,
         Guid?   agentId,
         string  ownerId,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        int     maxTokens = 4096)
     {
         var sw = Stopwatch.StartNew();
 
@@ -48,7 +49,7 @@ public sealed class ApsPlaygroundService
         var parameters = new MessageParameters
         {
             Model     = modelName,
-            MaxTokens = 4096,
+            MaxTokens = maxTokens,
             Messages  = messages
         };
 

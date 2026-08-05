@@ -1,4 +1,4 @@
-@* AUDIT:PENDING|Střední|Edit mode (?edit=guid) nezpracován – editace nefunguje *@
+@* AUDIT:FIXED|byl: edit mode (?edit=guid) ignorován; nyní načte existující agent a provede update *@
 @page "/create/agent"
 @rendermode InteractiveServer
 @attribute [Authorize]
@@ -6,10 +6,10 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 
-<PageTitle>Create Agent — AgentsPromptsSkills</PageTitle>
+<PageTitle>@(_editId.HasValue ? "Edit Agent" : "Create Agent") — AgentsPromptsSkills</PageTitle>
 
 <div class="ui-page-header mb-4">
-    <h1 class="h3"><i class="bi bi-robot me-2"></i>Create Agent</h1>
+    <h1 class="h3"><i class="bi bi-robot me-2"></i>@(_editId.HasValue ? "Edit Agent" : "Create Agent")</h1>
 </div>
 
 <div class="ui-panel ui-anim-fade-up" style="max-width: 720px;">
@@ -71,9 +71,32 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "edit")]
+    public string? EditId { get; set; }
+
     private AgentFormModel _model = new();
     private bool _saving;
     private string? _error;
+    private Guid? _editId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Guid.TryParse(EditId, out var guid))
+        {
+            _editId = guid;
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var agent = await db.ApsAgents.FindAsync(guid);
+            if (agent is not null)
+            {
+                _model.Name         = agent.Name;
+                _model.Description  = agent.Description;
+                _model.SystemPrompt = agent.SystemPrompt;
+                _model.ModelName    = agent.ModelName;
+                _model.Category     = agent.CategoryName;
+                _model.IsPublic     = agent.IsPublic;
+            }
+        }
+    }
 
     private async Task SaveAsync()
     {
@@ -86,19 +109,38 @@
             var userName = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Unknown";
 
             await using var db = await DbFactory.CreateDbContextAsync();
-            var agent = new ApsAgent
+
+            if (_editId.HasValue)
             {
-                Name         = _model.Name,
-                Description  = _model.Description ?? "",
-                SystemPrompt = _model.SystemPrompt,
-                ModelName    = _model.ModelName,
-                CategoryName = _model.Category ?? "",
-                IsPublic     = _model.IsPublic,
-                OwnerId      = userId,
-                OwnerName    = userName
-            };
-            db.ApsAgents.Add(agent);
-            await db.SaveChangesAsync();
+                var agent = await db.ApsAgents.FindAsync(_editId.Value);
+                if (agent is not null && agent.OwnerId == userId)
+                {
+                    agent.Name         = _model.Name;
+                    agent.Description  = _model.Description ?? "";
+                    agent.SystemPrompt = _model.SystemPrompt;
+                    agent.ModelName    = _model.ModelName;
+                    agent.CategoryName = _model.Category ?? "";
+                    agent.IsPublic     = _model.IsPublic;
+                    await db.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                var agent = new ApsAgent
+                {
+                    Name         = _model.Name,
+                    Description  = _model.Description ?? "",
+                    SystemPrompt = _model.SystemPrompt,
+                    ModelName    = _model.ModelName,
+                    CategoryName = _model.Category ?? "",
+                    IsPublic     = _model.IsPublic,
+                    OwnerId      = userId,
+                    OwnerName    = userName
+                };
+                db.ApsAgents.Add(agent);
+                await db.SaveChangesAsync();
+            }
+
             Navigation.NavigateTo("/agents");
         }
         catch (Exception ex)
