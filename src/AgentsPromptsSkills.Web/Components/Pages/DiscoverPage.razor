@@ -92,44 +92,33 @@ else
     {
         await using var db = await DbFactory.CreateDbContextAsync();
 
-        var agentEntities = await db.ApsAgents
-            .Where(a => a.IsPublic)
-            .AsNoTracking()
-            .ToListAsync();
-        var agentGuids = agentEntities.Select(a => a.Guid).ToList();
-        var agentTagLinks = await db.ApsTagLinks
-            .Where(tl => tl.EntityType == "Agent" && agentGuids.Contains(tl.EntityId))
-            .Include(tl => tl.Tag)
-            .AsNoTracking()
-            .ToListAsync();
+        // Fáze 1: entity paralelně
+        var tAgentEnt  = db.ApsAgents.Where(a => a.IsPublic).AsNoTracking().ToListAsync();
+        var tPromptEnt = db.ApsPrompts.Where(p => p.IsPublic).AsNoTracking().ToListAsync();
+        var tSkillEnt  = db.ApsSkills.Where(s => s.IsPublic).AsNoTracking().ToListAsync();
+        await Task.WhenAll(tAgentEnt, tPromptEnt, tSkillEnt);
+        var agentEntities  = tAgentEnt.Result;
+        var promptEntities = tPromptEnt.Result;
+        var skillEntities  = tSkillEnt.Result;
+
+        // Fáze 2: tagy paralelně (potřebujeme guidy z fáze 1)
+        var agentGuids  = agentEntities.Select(a => a.Guid).ToList();
+        var promptGuids = promptEntities.Select(p => p.Guid).ToList();
+        var skillGuids  = skillEntities.Select(s => s.Guid).ToList();
+        var tAgentTags  = db.ApsTagLinks.Where(tl => tl.EntityType == "Agent"  && agentGuids.Contains(tl.EntityId)).Include(tl => tl.Tag).AsNoTracking().ToListAsync();
+        var tPromptTags = db.ApsTagLinks.Where(tl => tl.EntityType == "Prompt" && promptGuids.Contains(tl.EntityId)).Include(tl => tl.Tag).AsNoTracking().ToListAsync();
+        var tSkillTags  = db.ApsTagLinks.Where(tl => tl.EntityType == "Skill"  && skillGuids.Contains(tl.EntityId)).Include(tl => tl.Tag).AsNoTracking().ToListAsync();
+        await Task.WhenAll(tAgentTags, tPromptTags, tSkillTags);
+        var agentTagLinks  = tAgentTags.Result;
+        var promptTagLinks = tPromptTags.Result;
+        var skillTagLinks  = tSkillTags.Result;
+
         var agents = agentEntities.Select(a => new DiscoverItem(
             a.Guid, a.Name, "Agent", a.Description, a.CategoryName, a.OwnerName, a.LikeCount,
             agentTagLinks.Where(tl => tl.EntityId == a.Guid).Select(tl => tl.Tag.Name).ToList())).ToList();
-
-        var promptEntities = await db.ApsPrompts
-            .Where(p => p.IsPublic)
-            .AsNoTracking()
-            .ToListAsync();
-        var promptGuids = promptEntities.Select(p => p.Guid).ToList();
-        var promptTagLinks = await db.ApsTagLinks
-            .Where(tl => tl.EntityType == "Prompt" && promptGuids.Contains(tl.EntityId))
-            .Include(tl => tl.Tag)
-            .AsNoTracking()
-            .ToListAsync();
         var prompts = promptEntities.Select(p => new DiscoverItem(
             p.Guid, p.Name, "Prompt", p.Description, p.CategoryName, p.OwnerName, p.LikeCount,
             promptTagLinks.Where(tl => tl.EntityId == p.Guid).Select(tl => tl.Tag.Name).ToList())).ToList();
-
-        var skillEntities = await db.ApsSkills
-            .Where(s => s.IsPublic)
-            .AsNoTracking()
-            .ToListAsync();
-        var skillGuids = skillEntities.Select(s => s.Guid).ToList();
-        var skillTagLinks = await db.ApsTagLinks
-            .Where(tl => tl.EntityType == "Skill" && skillGuids.Contains(tl.EntityId))
-            .Include(tl => tl.Tag)
-            .AsNoTracking()
-            .ToListAsync();
         var skills = skillEntities.Select(s => new DiscoverItem(
             s.Guid, s.Name, "Skill", s.Description, s.CategoryName, s.OwnerName, s.LikeCount,
             skillTagLinks.Where(tl => tl.EntityId == s.Guid).Select(tl => tl.Tag.Name).ToList())).ToList();
