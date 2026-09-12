@@ -86,6 +86,16 @@ src/
 - Bootstrap 5 pro layout + Bootstrap Icons (`bi bi-*`)
 - Connection string klíč: `ApsDatabase` (nikoli `DefaultConnection`)
 
+## Data úložiště (data/)
+
+Repozitář slouží i jako datové úložiště pro AI agenty napříč projekty.
+
+| Složka | Obsah | Vlastník |
+|---|---|---|
+| `data/cards/` | JSON soubory s daty karetních her (Heroes of the Storm, MTG, Hearthstone, Gwent atd.) pro inspiraci herního designu projektu Mercenaries and Beasts | CCR routine `catalog-cards-heroes-units-factions` |
+
+**Workflow:** CCR agent zapisuje JSON soubory přímo do `data/cards/` a pushuje na `main`. Toto je záměrný a schválený postup — push na main bez PR je standard pro datové updaty.
+
 ## Tests
 
 - `AgentsPromptsSkills.Tests` — xUnit + FluentAssertions + `WebApplicationFactory<Program>`
