@@ -55,3 +55,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Produkční konfigurace s credentials — nikdy necommitovat
+appsettings.Production.json
