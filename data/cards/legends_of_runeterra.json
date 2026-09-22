@@ -1,0 +1,44 @@
+{
+  "game": "Legends of Runeterra",
+  "updated_at": "2026-09-22T07:12:38Z",
+  "source_urls": [
+    "https://wiki.leagueoflegends.com/en-us/LoR:Region",
+    "https://support-legendsofruneterra.riotgames.com/hc/en-us/articles/6005874374035-Runeterran-Champions",
+    "https://en.wikipedia.org/wiki/Legends_of_Runeterra"
+  ],
+  "factions": [
+    {"name": "Demacia", "description": "Justice and unity; go-wide aggro with Elite and rally synergies.", "color": "gold"},
+    {"name": "Noxus", "description": "Strength and conquest; aggressive attack-focused strategies and Overwhelm.", "color": "red"},
+    {"name": "Ionia", "description": "Balance and spirit; combat tricks, recall and deny-the-opponent's-plan tempo.", "color": "teal"},
+    {"name": "Piltover & Zaun", "description": "Innovation; Move/create effects, ramp and inventive value engines.", "color": "blue"},
+    {"name": "Freljord", "description": "Endurance and might; Frostbite, buffs, and big stat finishers.", "color": "ice-blue"},
+    {"name": "Shadow Isles", "description": "Death and decay; The Harrowing, self-mill and undying/ephemeral synergies.", "color": "green-black"},
+    {"name": "Bilgewater", "description": "Greed and plunder; gold generation and Deep sea creatures.", "color": "orange"},
+    {"name": "Targon", "description": "Ascension and celestial power; day/night cycle and buff-heavy auras.", "color": "purple"},
+    {"name": "Shurima", "description": "Ascension of the desert empire; Landmarks and leveling up scaling champions.", "color": "sand"},
+    {"name": "Bandle City", "description": "Yordle whimsy; go-wide tricks, tiny units and disruptive Fleeting spells.", "color": "pink"},
+    {"name": "Spirit Blossom", "description": "Alternate-universe spirit realm; recursion and transformation themes, added as a permanent 12th region.", "color": "violet"}
+  ],
+  "cards": [
+    {"name": "Garen", "type": "Champion Unit", "cost": 5, "attack": 5, "health": 5, "faction": "Demacia", "rarity": "Champion", "abilities": ["Tough", "Level up"], "description": "Levels up after dealing 10+ damage; becomes near-unkillable Might of Demacia."},
+    {"name": "Lucian", "type": "Champion Unit", "cost": 3, "attack": 3, "health": 2, "faction": "Demacia", "rarity": "Champion", "abilities": ["Double strike synergy"], "description": "Gains attack triggers when allies die; levels up after 3 allies die."},
+    {"name": "Darius", "type": "Champion Unit", "cost": 6, "attack": 8, "health": 7, "faction": "Noxus", "rarity": "Champion", "abilities": ["Overwhelm", "Level up"], "description": "Levels up when the enemy is below 10 health; strikes for lethal reach."},
+    {"name": "Katarina", "type": "Champion Unit", "cost": 3, "attack": 3, "health": 2, "faction": "Noxus", "rarity": "Champion", "abilities": ["Recall on kill"], "description": "Levels up after 3 allies die or kill enemies in one round."},
+    {"name": "Zed", "type": "Champion Unit", "cost": 3, "attack": 3, "health": 2, "faction": "Ionia", "rarity": "Champion", "abilities": ["Deathtouch-like removal"], "description": "Creates Shadow copies; levels up by playing 3 Ionia spells."},
+    {"name": "Karma", "type": "Champion Unit", "cost": 4, "attack": 3, "health": 5, "faction": "Ionia", "rarity": "Champion", "abilities": ["Spell buff"], "description": "Levels up after playing 4 spells; empowers Mantra spell."},
+    {"name": "Jinx", "type": "Champion Unit", "cost": 4, "attack": 4, "health": 3, "faction": "Piltover & Zaun", "rarity": "Champion", "abilities": ["Burn finisher"], "description": "Levels up after you attack twice in a round; becomes a rocket-launching threat."},
+    {"name": "Heimerdinger", "type": "Champion Unit", "cost": 4, "attack": 2, "health": 5, "faction": "Piltover & Zaun", "rarity": "Champion", "abilities": ["Turret generation"], "description": "Summons Turrets that deal damage; levels up after summoning 6 turrets."},
+    {"name": "Anivia", "type": "Champion Unit", "cost": 6, "attack": 5, "health": 5, "faction": "Freljord", "rarity": "Champion", "abilities": ["Recursion", "Frostbite synergy"], "description": "Returns to hand as an egg when it dies instead of going to the graveyard."},
+    {"name": "Sejuani", "type": "Champion Unit", "cost": 6, "attack": 5, "health": 5, "faction": "Freljord", "rarity": "Champion", "abilities": ["Frostbite", "Stun"], "description": "Levels up after you Frostbite the enemy Nexus; can Vulnerable-stun enemies."},
+    {"name": "Hecarim", "type": "Champion Unit", "cost": 5, "attack": 5, "health": 5, "faction": "Shadow Isles", "rarity": "Champion", "abilities": ["Overwhelm", "Ephemeral synergy"], "description": "Levels up after 3 Ephemeral or Fearsome units die on either side."},
+    {"name": "Thresh", "type": "Champion Unit", "cost": 4, "attack": 3, "health": 5, "faction": "Shadow Isles", "rarity": "Champion", "abilities": ["Equipment buff"], "description": "Collects Soul fragments from deaths to grow The Box equipment power."},
+    {"name": "Miss Fortune", "type": "Champion Unit", "cost": 4, "attack": 4, "health": 3, "faction": "Bilgewater", "rarity": "Champion", "abilities": ["AoE damage"], "description": "Levels up after 6+ enemies die; Bullet Time deals damage to the weakest enemies."},
+    {"name": "Aphelios", "type": "Champion Unit", "cost": 4, "attack": 3, "health": 3, "faction": "Targon", "rarity": "Champion", "abilities": ["Weapon cycling"], "description": "Cycles through five unique gun abilities each round he strikes."},
+    {"name": "Leona", "type": "Champion Unit", "cost": 3, "attack": 2, "health": 5, "faction": "Targon", "rarity": "Champion", "abilities": ["Stun", "Day synergy"], "description": "Levels up during Day; can stun blockers to guarantee damage through."},
+    {"name": "Azir", "type": "Champion Unit", "cost": 6, "attack": 3, "health": 3, "faction": "Shurima", "rarity": "Champion", "abilities": ["Summon Sand Soldiers"], "description": "Summons Sand Soldiers when you play a card with no play this round; levels up with 6 Landmarks/Shurima cards played."},
+    {"name": "Nasus", "type": "Champion Unit", "cost": 4, "attack": 2, "health": 4, "faction": "Shurima", "rarity": "Champion", "abilities": ["Growth"], "description": "Grows +1/+1 permanently whenever a unit dies."},
+    {"name": "Teemo", "type": "Champion Unit", "cost": 1, "attack": 1, "health": 1, "faction": "Bandle City", "rarity": "Champion", "abilities": ["Deathtouch traps"], "description": "Hides Blinding Dart traps in the enemy deck; levels up after 4 traps trigger."},
+    {"name": "Elusive Scout", "type": "Unit", "cost": 1, "attack": 1, "health": 1, "faction": "Bandle City", "rarity": "Common", "abilities": ["Elusive"], "description": "Early aggressive Elusive unit representative of the go-wide Bandle City kit."},
+    {"name": "The Ruination", "type": "Spell", "cost": 8, "faction": "Shadow Isles", "rarity": "Champion Spell", "abilities": ["Mass removal"], "description": "Give all allied and enemy non-champion units -10/-10. Signature Shadow Isles board wipe."}
+  ]
+}

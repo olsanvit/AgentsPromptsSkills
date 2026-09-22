@@ -1,0 +1,40 @@
+{
+  "game": "Magic: The Gathering",
+  "updated_at": "2026-09-22T07:12:38Z",
+  "source_urls": [
+    "https://scryfall.com/docs/api",
+    "https://scryfall.com/docs/api/bulk-data",
+    "https://www.thegamer.com/magic-the-gathering-color-philosophy-explained/",
+    "https://mtg.fandom.com/wiki/Color"
+  ],
+  "factions": [
+    {"name": "White", "description": "Order, peace, structure and community. Wins through go-wide boards, efficient removal and lifegain.", "color": "white"},
+    {"name": "Blue", "description": "Knowledge, control and manipulation. Card draw, counterspells and bounce to out-think the opponent.", "color": "blue"},
+    {"name": "Black", "description": "Power at any cost, ruthless and self-serving. Removal, reanimation and life-as-a-resource strategies.", "color": "black"},
+    {"name": "Red", "description": "Freedom, emotion and chaos. Fast aggression, direct damage and high-risk high-reward plays.", "color": "red"},
+    {"name": "Green", "description": "Growth, nature and instinct. Big creatures, mana ramp and raw power over subtlety.", "color": "green"},
+    {"name": "Colorless / Artifact", "description": "Cross-color machinery and mana rocks usable in any deck.", "color": "gray"}
+  ],
+  "cards": [
+    {"name": "Black Lotus", "type": "Artifact", "cost": 0, "faction": "Colorless / Artifact", "rarity": "Power Nine (Vintage-restricted)", "abilities": ["Mana burst"], "description": "Tap, Sacrifice: Add three mana of any one color."},
+    {"name": "Tarmogoyf", "type": "Creature - Lhurgoyf", "cost": 2, "attack": null, "health": null, "faction": "Green", "rarity": "Rare", "abilities": ["Power/toughness = card types in graveyards"], "description": "Grows with card types among all graveyards; efficient aggressive threat."},
+    {"name": "Lightning Bolt", "type": "Instant", "cost": 1, "faction": "Red", "rarity": "Common", "abilities": ["Damage"], "description": "Deal 3 damage to any target. Efficiency benchmark for burn spells."},
+    {"name": "Counterspell", "type": "Instant", "cost": 2, "faction": "Blue", "rarity": "Common", "abilities": ["Counter"], "description": "Counter target spell. Defines the blue control archetype."},
+    {"name": "Swords to Plowshares", "type": "Instant", "cost": 1, "faction": "White", "rarity": "Uncommon", "abilities": ["Exile removal"], "description": "Exile target creature; its controller gains life equal to its power."},
+    {"name": "Dark Ritual", "type": "Instant", "cost": 1, "faction": "Black", "rarity": "Common", "abilities": ["Mana burst"], "description": "Add three black mana; classic fast-mana enabler."},
+    {"name": "Llanowar Elves", "type": "Creature - Elf Druid", "cost": 1, "attack": 1, "health": 1, "faction": "Green", "rarity": "Common", "abilities": ["Mana ramp"], "description": "Tap: Add one green mana."},
+    {"name": "Wrath of God", "type": "Sorcery", "cost": 4, "faction": "White", "rarity": "Rare", "abilities": ["Board wipe"], "description": "Destroy all creatures. They can't be regenerated."},
+    {"name": "Griselbrand", "type": "Creature - Demon", "cost": 8, "attack": 7, "health": 7, "faction": "Black", "rarity": "Mythic Rare", "abilities": ["Flying", "Lifelink", "Draw"], "description": "Flying, lifelink; pay 7 life: draw 7 cards."},
+    {"name": "Jace, the Mind Sculptor", "type": "Planeswalker - Jace", "cost": 4, "faction": "Blue", "rarity": "Mythic Rare", "abilities": ["Planeswalker abilities"], "description": "Iconic card-advantage planeswalker with Brainstorm-like and bounce abilities."},
+    {"name": "Craterhoof Behemoth", "type": "Creature - Beast", "cost": 8, "attack": 8, "health": 8, "faction": "Green", "rarity": "Mythic Rare", "abilities": ["Trample", "Team pump"], "description": "Battlecry-style finisher: gives all creatures +X/+X, trample and haste."},
+    {"name": "Goblin Guide", "type": "Creature - Goblin Scout", "cost": 1, "attack": 2, "health": 2, "faction": "Red", "rarity": "Rare", "abilities": ["Haste"], "description": "Haste; opponent may reveal top card, if land you draw it. Aggro staple."},
+    {"name": "Snapcaster Mage", "type": "Creature - Human Wizard", "cost": 2, "attack": 2, "health": 1, "faction": "Blue", "rarity": "Rare", "abilities": ["Flashback grant"], "description": "ETB: target instant/sorcery in your graveyard gains flashback."},
+    {"name": "Thoughtseize", "type": "Sorcery", "cost": 1, "faction": "Black", "rarity": "Rare", "abilities": ["Discard"], "description": "Target player reveals hand; you choose a nonland card, they discard it, you lose 2 life."},
+    {"name": "Path to Exile", "type": "Instant", "cost": 1, "faction": "White", "rarity": "Uncommon", "abilities": ["Exile removal"], "description": "Exile target creature; its controller may search for a basic land."},
+    {"name": "Birds of Paradise", "type": "Creature - Bird", "cost": 1, "attack": 0, "health": 1, "faction": "Green", "rarity": "Rare", "abilities": ["Flying", "Any-color mana ramp"], "description": "Flying. Tap: Add one mana of any color."},
+    {"name": "Solemn Simulacrum", "type": "Artifact Creature - Golem", "cost": 4, "attack": 2, "health": 2, "faction": "Colorless / Artifact", "rarity": "Rare", "abilities": ["Ramp", "Draw", "Death trigger"], "description": "ETB: search a basic land; dies: draw a card."},
+    {"name": "Sol Ring", "type": "Artifact", "cost": 1, "faction": "Colorless / Artifact", "rarity": "Uncommon", "abilities": ["Mana ramp"], "description": "Tap: Add 2 colorless mana. Format-defining fast mana in Commander."},
+    {"name": "Elesh Norn, Grand Cenobite", "type": "Creature - Phyrexian Praetor", "cost": 6, "attack": 4, "health": 7, "faction": "White", "rarity": "Mythic Rare", "abilities": ["Team pump", "Opponent debuff"], "description": "Your creatures get +2/+2; opponents' creatures get -2/-2."},
+    {"name": "Blightsteel Colossus", "type": "Artifact Creature - Golem", "cost": 12, "attack": 11, "health": 11, "faction": "Colorless / Artifact", "rarity": "Mythic Rare", "abilities": ["Infect", "Trample"], "description": "Infect, trample; single combat hit can be a lethal poison-counter kill."}
+  ]
+}

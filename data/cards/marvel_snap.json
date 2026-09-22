@@ -1,0 +1,31 @@
+{
+  "game": "Marvel Snap",
+  "updated_at": "2026-09-22T07:12:38Z",
+  "source_urls": [
+    "https://marvelsnapzone.com/",
+    "https://en.wikipedia.org/wiki/Marvel_Snap"
+  ],
+  "factions": [],
+  "cards": [
+    {"name": "Iron Man", "type": "Card", "cost": 5, "power": 0, "faction": null, "rarity": "Rare", "abilities": ["On Reveal"], "description": "On Reveal: Double the power of your other cards here."},
+    {"name": "Wolverine", "type": "Card", "cost": 3, "power": 2, "faction": null, "rarity": "Rare", "abilities": ["Ongoing", "Revive"], "description": "When this is destroyed, return it to your hand with +2 power."},
+    {"name": "Doctor Doom", "type": "Card", "cost": 5, "power": 5, "faction": null, "rarity": "Epic", "abilities": ["On Reveal"], "description": "On Reveal: Add a 2-power Doombot to each other location."},
+    {"name": "Killmonger", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Rare", "abilities": ["On Reveal"], "description": "On Reveal: Destroy all 1-Cost cards played this game, then gains +2 Power for each destroyed."},
+    {"name": "Cosmo", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Rare", "abilities": ["Ongoing"], "description": "Ongoing: Ability text of cards can't trigger at this location."},
+    {"name": "Enchantress", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Rare", "abilities": ["On Reveal"], "description": "On Reveal: Remove Ongoing abilities from all cards at this location."},
+    {"name": "Shang-Chi", "type": "Card", "cost": 4, "power": 4, "faction": null, "rarity": "Epic", "abilities": ["On Reveal"], "description": "On Reveal: Reduce the Power of each enemy card with Power 9 or more to 9."},
+    {"name": "Jubilee", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Rare", "abilities": ["On Reveal"], "description": "On Reveal: Add a card from your deck to this location. It costs 1 less."},
+    {"name": "Mister Fantastic", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Common", "abilities": ["Ongoing"], "description": "Ongoing: Adjacent locations have +2 Power for you."},
+    {"name": "Odin", "type": "Card", "cost": 4, "power": 4, "faction": null, "rarity": "Epic", "abilities": ["On Reveal"], "description": "On Reveal: Activate the On Reveal ability of your other cards here again."},
+    {"name": "Leader", "type": "Card", "cost": 5, "power": 3, "faction": null, "rarity": "Epic", "abilities": ["On Reveal"], "description": "On Reveal: Copy the On Reveal ability of a random card in your opponent's deck, then use it."},
+    {"name": "Galactus", "type": "Card", "cost": 6, "power": 8, "faction": null, "rarity": "Ultra", "abilities": ["On Reveal"], "description": "On Reveal: Destroy all cards at other locations, then fills them with 6-Power Asteroids."},
+    {"name": "Knull", "type": "Card", "cost": 6, "power": 6, "faction": null, "rarity": "Ultra", "abilities": ["On Reveal"], "description": "On Reveal: Gains +2 Power for each card in all discard piles."},
+    {"name": "Zabu", "type": "Card", "cost": 1, "power": 1, "faction": null, "rarity": "Rare", "abilities": ["Ongoing"], "description": "Ongoing: Your 1-Cost cards cost 1 less (but not less than 1)."},
+    {"name": "Ebony Maw", "type": "Card", "cost": 2, "power": 7, "faction": null, "rarity": "Epic", "abilities": ["Ongoing"], "description": "Ongoing: Your other cards here cost 1 more."},
+    {"name": "Sera", "type": "Card", "cost": 2, "power": 2, "faction": null, "rarity": "Rare", "abilities": ["Ongoing"], "description": "Ongoing: Your On Reveal abilities also happen one turn later, again."},
+    {"name": "America Chavez", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Rare", "abilities": ["Ongoing"], "description": "Ongoing: You always draw non-Card Draw cards first."},
+    {"name": "Hela", "type": "Card", "cost": 6, "power": 0, "faction": null, "rarity": "Epic", "abilities": ["On Reveal"], "description": "On Reveal: Return all cards in both discard piles to play, at random locations."},
+    {"name": "Devil Dinosaur", "type": "Card", "cost": 3, "power": 3, "faction": null, "rarity": "Rare", "abilities": ["Ongoing"], "description": "Ongoing: Gains +2 Power for each card in your hand."},
+    {"name": "Nova", "type": "Card", "cost": 1, "power": 1, "faction": null, "rarity": "Common", "abilities": ["On Reveal"], "description": "On Reveal: Give +1 Power to a random card in your hand."}
+  ]
+}

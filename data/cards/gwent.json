@@ -1,0 +1,35 @@
+{
+  "game": "Gwent: The Witcher Card Game",
+  "updated_at": "2026-09-22T07:12:38Z",
+  "source_urls": [
+    "https://gwent.fandom.com/wiki/Faction",
+    "https://screenrant.com/gwent-witcher-card-game-faction-guide/",
+    "https://leriohub.com/factions-in-gwent-balance-council-a-general-stats-summary-2026/",
+    "https://gwentchecklist.com/factions"
+  ],
+  "factions": [
+    {"name": "Northern Realms", "description": "Human kingdoms; disciplined orders, sieges and control-oriented tall/wide hybrids.", "color": "blue"},
+    {"name": "Nilfgaard", "description": "Imperial spies and manipulation; deck-thinning, spying and control of both players' resources.", "color": "black"},
+    {"name": "Monsters", "description": "Consume and devour synergies; weather effects and resilient swarm-then-eat strategies.", "color": "red"},
+    {"name": "Scoia'tael", "description": "Elves and guerrilla fighters; ambush traps, tall/wide flexibility and movement.", "color": "green"},
+    {"name": "Skellige", "description": "Viking raiders; self-damage, resurrection and graveyard synergies for big swing turns.", "color": "purple"},
+    {"name": "Syndicate", "description": "Crime lords of Novigrad; coin generation and crime synergy for burst value.", "color": "orange"}
+  ],
+  "cards": [
+    {"name": "Geralt of Rivia", "type": "Unit", "cost": null, "power": 15, "faction": "Neutral", "rarity": "Legendary", "abilities": ["Witcher synergy"], "description": "Iconic neutral leader-adjacent Witcher card usable across factions."},
+    {"name": "Yennefer of Vengerberg", "type": "Unit", "cost": null, "power": 10, "faction": "Neutral", "rarity": "Legendary", "abilities": ["Charm"], "description": "Powerful neutral gold card representing the sorceress."},
+    {"name": "Vernon Roche", "type": "Unit", "cost": null, "power": 5, "faction": "Northern Realms", "rarity": "Legendary", "abilities": ["Order"], "description": "Iconic Blue Stripes commander; boosts and coordinates human soldier synergy."},
+    {"name": "Siege Tower", "type": "Unit", "cost": null, "power": 5, "faction": "Northern Realms", "rarity": "Common", "abilities": ["Boost adjacent"], "description": "Represents siege-based board control archetype for Northern Realms."},
+    {"name": "Vattier de Rideaux", "type": "Unit", "cost": null, "power": 4, "faction": "Nilfgaard", "rarity": "Legendary", "abilities": ["Spy synergy"], "description": "Rewards controlling opposing spies for extra card advantage."},
+    {"name": "Assire var Anahid", "type": "Unit", "cost": null, "power": 6, "faction": "Nilfgaard", "rarity": "Legendary", "abilities": ["Deck thin"], "description": "Represents Nilfgaard's signature deck-thinning value engine."},
+    {"name": "Ge'els", "type": "Unit", "cost": null, "power": 6, "faction": "Monsters", "rarity": "Legendary", "abilities": ["Resurrect"], "description": "Elder Speech leader-adjacent card that resurrects fallen Monster units."},
+    {"name": "Caretaker", "type": "Unit", "cost": null, "power": 1, "faction": "Monsters", "rarity": "Rare", "abilities": ["Consume synergy"], "description": "Signature consume-payoff unit for Monster devour decks."},
+    {"name": "Francesca Findabair", "type": "Unit", "cost": null, "power": 5, "faction": "Scoia'tael", "rarity": "Legendary", "abilities": ["Movement", "Elf synergy"], "description": "Elven queen enabling movement and elf tribal payoff."},
+    {"name": "Dol Blathanna Ambush", "type": "Unit", "cost": null, "power": 2, "faction": "Scoia'tael", "rarity": "Rare", "abilities": ["Ambush"], "description": "Represents Scoia'tael's ambush/trap archetype."},
+    {"name": "Crach an Craite", "type": "Unit", "cost": null, "power": 6, "faction": "Skellige", "rarity": "Legendary", "abilities": ["Self-damage synergy"], "description": "King of Skellige; central to self-wound and warrior synergy decks."},
+    {"name": "Cerys an Craite", "type": "Unit", "cost": null, "power": 5, "faction": "Skellige", "rarity": "Legendary", "abilities": ["Resurrection"], "description": "Enables graveyard resurrection value for Skellige."},
+    {"name": "Whoreson Junior", "type": "Unit", "cost": null, "power": 6, "faction": "Syndicate", "rarity": "Legendary", "abilities": ["Coin generation"], "description": "Crime boss enabling coin-spending burst plays."},
+    {"name": "Sigismund Dijkstra", "type": "Unit", "cost": null, "power": 6, "faction": "Syndicate", "rarity": "Legendary", "abilities": ["Coin synergy"], "description": "High-value Syndicate leader-adjacent unit that scales with saved coins."},
+    {"name": "Villentretenmerth", "type": "Unit", "cost": null, "power": 7, "faction": "Neutral", "rarity": "Legendary", "abilities": ["Removal"], "description": "Golden dragon card capable of damaging or destroying strong enemy units."}
+  ]
+}
